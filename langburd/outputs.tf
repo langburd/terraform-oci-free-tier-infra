@@ -1,6 +1,6 @@
-output "root_compartment_id" {
-  description = "The root compartment ID"
-  value       = module.compartment.root_compartment_id
+output "test_compartment_id" {
+  description = "The root compartment ID of the Test Compartment"
+  value       = module.test_compartment.root_compartment_id
 }
 
 output "oci_profile_data" {
