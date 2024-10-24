@@ -1,6 +1,11 @@
+locals {
+  profile_name = "langburd"
+}
+
 module "oci_profile_reader" {
-  source       = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/oci_profile_reader?ref=v1.0.1"
-  profile_name = "LANGBURD"
+  # source       = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/oci_profile_reader?ref=v1.0.1"
+  source       = "../../terraform-oci-free-tier-modules/modules/oci_profile_reader"
+  profile_name = local.profile_name
 }
 
 module "test_compartment" {
