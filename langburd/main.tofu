@@ -1,5 +1,7 @@
 locals {
   profile_name = "langburd"
+  name         = "kubernetes-on-arm-with-oracle" # "cloudblock-compartment" # "pihole-vpn"
+  # name = "pihole-vpn"
 }
 
 module "oci_profile_reader" {
@@ -8,30 +10,48 @@ module "oci_profile_reader" {
   profile_name = local.profile_name
 }
 
-module "test_compartment" {
+module "compartment" {
   # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
   source = "../../terraform-oci-free-tier-modules/modules/identity"
 
-  oci_root_compartment    = module.oci_profile_reader.oci_profile_data.tenancy
-  compartment_name        = "test-compartment"
-  compartment_description = "This is a Test Compartment"
-
+  oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
+  compartment_description   = "Compartment for Pi-Hole and WireGuard VPN"
+  compartment_enable_delete = true
+  compartment_name          = local.name
   compartment_freeform_tags = {
     "Terraform"   = "true"
-    "Environment" = "Dev"
+    "Environment" = "Production"
   }
 }
 
-# module "dev_compartment" {
-#   # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
-#   source = "../../terraform-oci-free-tier-modules/modules/identity"
+# module "network" {
+#   source = "../../terraform-oci-free-tier-modules/modules/network"
 
-#   oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
-#   compartment_name          = "Dev"
-#   compartment_description   = "This is a Dev Compartment"
-#   compartment_enable_delete = true
-#   compartment_freeform_tags = {
-#     "Terraform"   = "true"
-#     "Environment" = "Dev"
-#   }
+#   # tenancy_ocid     = module.oci_profile_reader.oci_profile_data.tenancy
+#   compartment_ocid = module.compartment.compartment_id
+# }
+
+# output "compartment_id" {
+#   description = "The OCID of the compartment"
+#   value       = module.compartment.compartment_id
+# }
+
+# output "compartment_name" {
+#   description = "The name of the compartment"
+#   value       = module.compartment.compartment_name
+# }
+
+# output "compartment_description" {
+#   description = "The description of the compartment"
+#   value       = module.compartment.compartment_description
+# }
+
+# output "compartment_freeform_tags" {
+#   description = "The freeform tags of the compartment"
+#   value       = module.compartment.compartment_freeform_tags
+# }
+
+# output "compartment_defined_tags" {
+#   description = "The defined tags of the compartment"
+#   value       = module.compartment.compartment_defined_tags
 # }
