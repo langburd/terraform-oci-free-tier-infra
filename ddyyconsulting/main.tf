@@ -1,5 +1,11 @@
 locals {
   profile_name = "ddyyconsulting"
+  default_tags = {
+    "Environment" = "Dev"
+    "GitRepo"     = "https://github.com/langburd/terraform-oci-free-tier-infra/tree/master/ddyyconsulting"
+    "ManagedBy"   = "Terraform"
+    "Owner"       = "avi@langburd.com"
+  }
 }
 
 module "oci_profile_reader" {
@@ -7,30 +13,24 @@ module "oci_profile_reader" {
   profile_name = local.profile_name
 }
 
-# module "test_compartment" {
-#   # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
-#   source = "../../terraform-oci-free-tier-modules/modules/identity"
+module "dev_compartment" {
+  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
+  source = "../../terraform-oci-free-tier-modules/modules/identity"
 
-#   oci_root_compartment    = module.oci_profile_reader.oci_profile_data.tenancy
-#   compartment_name        = "test-compartment"
-#   compartment_description = "This is a Test Compartment"
+  oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
+  compartment_name          = "Dev"
+  compartment_description   = "Compartment used for a Development purposes"
+  compartment_freeform_tags = local.default_tags
+}
 
-#   compartment_freeform_tags = {
-#     "Terraform"   = "true"
-#     "Environment" = "Dev"
-#   }
-# }
+module "dev_budget" {
+  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
+  source = "../../terraform-oci-free-tier-modules/modules/budget"
 
-# module "dev_compartment" {
-#   # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
-#   source = "../../terraform-oci-free-tier-modules/modules/identity"
+  budget_compartment_id = module.dev_compartment.compartment_id
+  budget_freeform_tags  = local.default_tags
+  budget_targets        = [module.oci_profile_reader.oci_profile_data.tenancy]
 
-#   oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
-#   compartment_name          = "Dev"
-#   compartment_description   = "This is a Dev Compartment"
-#   compartment_enable_delete = true
-#   compartment_freeform_tags = {
-#     "Terraform"   = "true"
-#     "Environment" = "Dev"
-#   }
-# }
+  alert_freeform_tags = local.default_tags
+  alert_recipients    = "alerts@ddyy.pro"
+}
