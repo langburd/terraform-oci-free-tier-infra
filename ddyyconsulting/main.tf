@@ -14,8 +14,8 @@ module "oci_profile_reader" {
 }
 
 module "dev_compartment" {
-  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
-  source = "../../terraform-oci-free-tier-modules/modules/identity"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
+  # source = "../../terraform-oci-free-tier-modules/modules/identity"
 
   oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
   compartment_name          = "Dev"
@@ -24,8 +24,8 @@ module "dev_compartment" {
 }
 
 module "dev_budget" {
-  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
-  source = "../../terraform-oci-free-tier-modules/modules/budget"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/budget?ref=master"
+  # source = "../../terraform-oci-free-tier-modules/modules/budget"
 
   budget_compartment_id = module.dev_compartment.compartment_id
   budget_freeform_tags  = local.default_tags
