@@ -21,6 +21,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout terraform-oci-free-tier-modules
+        uses: actions/checkout@v4
+        with:
+          repository: langburd/terraform-oci-free-tier-modules
+          path: ../terraform-oci-free-tier-modules
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Install Python
         uses: actions/setup-python@v5
         with:
