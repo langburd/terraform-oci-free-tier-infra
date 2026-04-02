@@ -24,8 +24,8 @@ module "dev_compartment" {
 }
 
 module "dev_budget" {
-  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/budget/v1.0.0"
-  source = "../../terraform-oci-free-tier-modules/oci/budget"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/budget/v1.0.1"
+  # source = "../../terraform-oci-free-tier-modules/oci/budget"
 
   budget_compartment_id = module.oci_profile_reader.oci_profile_data.tenancy
   budget_freeform_tags  = local.default_tags
