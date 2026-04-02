@@ -41,7 +41,7 @@ jobs:
           sudo chmod +x /usr/local/bin/terraform-docs
 
       - name: Install tflint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
 
       - name: Run pre-commit action
         uses: pre-commit/action@v3.0.1
