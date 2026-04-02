@@ -31,3 +31,14 @@ Terraform configurations for Oracle Cloud Infrastructure (OCI) Free Tier resourc
 - Run `terraform validate` before committing changes
 - OCI authentication uses profile-based config from `~/.oci/config` — the `oci_profile_reader` module parses this
 - Default tags (Environment, GitRepo, ManagedBy, Owner) are applied to all resources via provider default_tags
+
+## Module Source Format
+
+Modules use [terraform-module-releaser](https://github.com/techpivot/terraform-module-releaser) which creates per-module orphan tag commits. Each tag (e.g., `oci/budget/v1.0.0`) points to a commit containing only that module's files at root level — no subdirectory.
+
+Correct source format:
+```hcl
+source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/<module>/vX.Y.Z"
+```
+
+Do NOT use `//oci/<module>` subdir notation — the subdir does not exist at the tagged commit.
