@@ -5,14 +5,14 @@ locals {
 }
 
 module "oci_profile_reader" {
-  # source       = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/oci_profile_reader?ref=v1.0.1"
-  source       = "../../terraform-oci-free-tier-modules/modules/oci_profile_reader"
+  # source       = "git@github.com:langburd/terraform-oci-free-tier-modules.git//oci/oci_profile_reader?ref=v1.0.1"
+  source       = "../../terraform-oci-free-tier-modules/oci/oci_profile_reader"
   profile_name = local.profile_name
 }
 
 module "compartment" {
-  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//modules/identity?ref=master"
-  source = "../../terraform-oci-free-tier-modules/modules/identity"
+  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//oci/identity?ref=master"
+  source = "../../terraform-oci-free-tier-modules/oci/identity"
 
   oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
   compartment_description   = "Compartment for Pi-Hole and WireGuard VPN"
@@ -25,7 +25,7 @@ module "compartment" {
 }
 
 # module "network" {
-#   source = "../../terraform-oci-free-tier-modules/modules/network"
+#   source = "../../terraform-oci-free-tier-modules/oci/network"
 
 #   # tenancy_ocid     = module.oci_profile_reader.oci_profile_data.tenancy
 #   compartment_ocid = module.compartment.compartment_id
