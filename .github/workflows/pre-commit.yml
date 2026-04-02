@@ -29,31 +29,19 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Install prerequisites (terraform-docs, tflint)
+      - name: Install terraform-docs
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Install prerequisites (terraform-docs, tflint)
-
-          # # Install shfmt
-          # sudo wget -q -O /usr/local/bin/shfmt $(curl -sL https://api.github.com/repos/mvdan/sh/releases/latest | grep browser_download_url | grep -o -E "https://.+?_linux_amd64")
-          # sudo chmod +x /usr/local/bin/shfmt
-
-          # # Install hadolint
-          # sudo wget -q -O /usr/local/bin/hadolint $(curl -sL https://api.github.com/repos/hadolint/hadolint/releases/latest | grep browser_download_url | grep -o -E "https://.+?-Linux-x86_64" | uniq)
-          # sudo chmod +x /usr/local/bin/hadolint
-
-          # # Install terragrunt
-          # sudo wget -q -O /usr/local/bin/terragrunt $(curl -sL https://api.github.com/repos/gruntwork-io/terragrunt/releases/latest | grep browser_download_url | grep -o -E "https://.+?_linux_amd64")
-          # sudo chmod +x /usr/local/bin/terragrunt
-
-          # Install terraform-docs
-          sudo wget -q -O /usr/local/bin/terraform-docs.tar.gz $(curl -sL https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep browser_download_url | grep -o -E "https://.+?-linux-amd64.tar.gz")
-          sudo tar -xzf /usr/local/bin/terraform-docs.tar.gz -C /usr/local/bin
+          TERRAFORM_DOCS_URL=$(curl -sL --header "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest \
+            | grep browser_download_url | grep -o -E "https://.+?-linux-amd64.tar.gz")
+          sudo wget -q -O /tmp/terraform-docs.tar.gz "$TERRAFORM_DOCS_URL"
+          sudo tar -xzf /tmp/terraform-docs.tar.gz -C /usr/local/bin terraform-docs
           sudo chmod +x /usr/local/bin/terraform-docs
 
-          # Install tflint
-          sudo wget -q -O /usr/local/bin/tflint.zip $(curl -sL https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep browser_download_url | grep -o -E "https://.+?_linux_amd64.zip")
-          sudo gunzip -f -S .zip /usr/local/bin/tflint.zip
-          sudo chmod +x /usr/local/bin/tflint
+      - name: Install tflint
+        uses: terraform-linters/setup-tflint@v4
 
       - name: Run pre-commit action
         uses: pre-commit/action@v3.0.1
