@@ -40,7 +40,7 @@
 | Maintenance burden | Low (Oracle manages control plane) | Medium (self-managed upgrades via Ansible) |
 | Node count (free tier) | 2-4 Arm nodes | 3 Arm + 2 AMD = 5 nodes |
 | External dependencies | None | Ansible, k3s-ansible playbooks |
-| Terraform version | >= 1.6.4 | >= 1.14 (for `action` block) |
+| Terraform version | >= 1.0 | >= 1.14 (for `action` block) |
 | Community precedent | 3 proven repos | 2 repos (kubeadm, not K3s) |
 
 ---
@@ -428,7 +428,7 @@ module "k3s_server" {
 | **Storage integration** | Native OCI CSI driver | Manual CSI or local-path |
 | **Networking complexity** | High (3 subnets + 3 NSGs) | Low (1-2 subnets + 1 security list) |
 | **New modules required** | 2 (`oke_cluster`, `oke_node_pool`) + 1 supporting (`network_security_group`) | 2 (`security_list`, `network_security_group`) + 1 composite (`k3s_cluster`) |
-| **Terraform version** | >= 1.6.4 | >= 1.14 |
+| **Terraform version** | >= 1.0 | >= 1.14 |
 | **External dependencies** | None | Ansible >= 2.15, k3s-ansible (vendored) |
 | **Setup time (estimated)** | ~10 min (Terraform apply) | ~15 min (Terraform + Ansible) |
 | **Time to implement modules** | Phase 1: 2 modules | Phase 2: 3 modules |
@@ -444,8 +444,9 @@ module "k3s_server" {
 ### New Modules Required
 
 All modules follow conventions from [terraform-oci-free-tier-modules/docs/plans/2026-04-02-oci-free-tier-modules-plan.md](../../terraform-oci-free-tier-modules/docs/plans/2026-04-02-oci-free-tier-modules-plan.md):
+
 - File structure: `main.tf`, `variables.tf`, `outputs.tf`, `providers.tf`, `README.md`, `tests/<module>.tftest.hcl`
-- Provider: `terraform >= 1.6.4`, `oci >= 6.0` (except `k3s_cluster` which needs `>= 1.14`)
+- Provider: `terraform >= 1.0`, `oci >= 6.0` (except `k3s_cluster` which needs `>= 1.14`)
 - Variable ordering: `description` -> `type` -> `default` -> `validation`
 - OCID validation regex on all OCID inputs
 - terraform-docs markers in README
@@ -506,6 +507,7 @@ object({
 **Outputs:** `nsg_id`
 
 **Test scenarios:**
+
 1. Default -- empty NSG, no rules
 2. With TCP ingress rules (SSH + HTTPS)
 3. With ICMP rules
@@ -561,6 +563,7 @@ Egress rule object: same shape but with `destination` and `destination_type` ins
 **Outputs:** `security_list_id`
 
 **Test scenarios:**
+
 1. Default -- empty security list
 2. With TCP ingress (SSH, HTTPS)
 3. With ICMP rules
@@ -601,11 +604,13 @@ OKE cluster with basic configuration.
 **Outputs:** `cluster_id`, `cluster_kubernetes_version`, `cluster_endpoints` (sensitive), `cluster_state`
 
 **Design notes:**
+
 - `type` defaults to `BASIC_CLUSTER` for free tier
 - `endpoint_config` block always rendered (requires `subnet_id`)
 - `options.add_ons.is_tiller_enabled` hardcoded to `false` (deprecated)
 
 **Test scenarios:**
+
 1. Basic cluster with required parameters
 2. Enhanced cluster type
 3. VCN-native CNI
@@ -645,6 +650,7 @@ OKE node pool for worker nodes.
 | `node_pool_freeform_tags` | `map(string)` | No | `{}` | -- |
 
 **Design notes:**
+
 - Uses `node_config_details` (not deprecated `subnet_ids` / `quantity_per_subnet`)
 - Generates `placement_configs` dynamically across ADs
 - `node_shape_config` block rendered only for Flex shapes (like `oci/compute`)
@@ -653,6 +659,7 @@ OKE node pool for worker nodes.
 **Outputs:** `node_pool_id`, `node_pool_nodes` (list of node IPs and states)
 
 **Test scenarios:**
+
 1. Default A1.Flex node pool
 2. Custom OCPU + memory
 3. Custom node count
@@ -707,6 +714,7 @@ terraform {
 **Outputs:** `k3s_token` (sensitive), `api_endpoint`, `kubeconfig_command` (string: `ssh -i <key> <user>@<server> sudo cat /etc/rancher/k3s/k3s.yaml`)
 
 **Design notes:**
+
 - k3s-ansible is vendored as a Git submodule at `vendor/k3s-ansible/` within the module
 - The `action` block runs k3s-ansible's `site.yml` against the dynamic inventory
 - Token is generated via `random_password` and passed as an `extra_var`
@@ -714,6 +722,7 @@ terraform {
 - Cloud-init should be used on compute instances to install Python 3 (required by Ansible)
 
 **Test scenarios:**
+
 1. Plan-only test with mock IPs (action blocks cannot be tested in `terraform test`)
 2. Variable validation tests (empty server_ips, invalid k3s_version)
 
@@ -982,18 +991,18 @@ Each new module gets a `tests/<module>.tftest.hcl` file with:
 
 | Topic | URL |
 |-------|-----|
-| Always Free Resources | https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm |
-| OKE Cluster Types | https://docs.oracle.com/en-us/iaas/Content/ContEng/Concepts/contengclustersnodes.htm |
-| OKE Network Config | https://docs.oracle.com/en-us/iaas/Content/ContEng/Concepts/contengnetworkconfig.htm |
+| Always Free Resources | <https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm> |
+| OKE Cluster Types | <https://docs.oracle.com/en-us/iaas/Content/ContEng/Concepts/contengclustersnodes.htm> |
+| OKE Network Config | <https://docs.oracle.com/en-us/iaas/Content/ContEng/Concepts/contengnetworkconfig.htm> |
 
 ### Terraform Provider Documentation
 
 | Provider | Resource | URL |
 |----------|----------|-----|
-| oracle/oci | `oci_containerengine_cluster` | https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/containerengine_cluster |
-| oracle/oci | `oci_containerengine_node_pool` | https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/containerengine_node_pool |
-| oracle/oci | `oci_core_network_security_group` | https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/core_network_security_group |
-| ansible/ansible | `ansible_playbook` / `ansible_playbook_run` | https://registry.terraform.io/providers/ansible/ansible/latest/docs |
+| oracle/oci | `oci_containerengine_cluster` | <https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/containerengine_cluster> |
+| oracle/oci | `oci_containerengine_node_pool` | <https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/containerengine_node_pool> |
+| oracle/oci | `oci_core_network_security_group` | <https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/core_network_security_group> |
+| ansible/ansible | `ansible_playbook` / `ansible_playbook_run` | <https://registry.terraform.io/providers/ansible/ansible/latest/docs> |
 
 ### Reference Implementations (OKE)
 
@@ -1014,16 +1023,16 @@ Each new module gets a `tests/<module>.tftest.hcl` file with:
 
 | Title | URL |
 |-------|-----|
-| Free Kubernetes Cluster on Oracle Cloud | https://arnoldgalovics.com/free-kubernetes-oracle-cloud/ |
-| Oracle Cloud Kubernetes with Terraform | https://arnoldgalovics.com/oracle-cloud-kubernetes-terraform/ |
+| Free Kubernetes Cluster on Oracle Cloud | <https://arnoldgalovics.com/free-kubernetes-oracle-cloud/> |
+| Oracle Cloud Kubernetes with Terraform | <https://arnoldgalovics.com/oracle-cloud-kubernetes-terraform/> |
 
 ### K3s / Ansible
 
 | Resource | URL |
 |----------|-----|
-| k3s-ansible playbooks | https://github.com/k3s-io/k3s-ansible |
-| Terraform Ansible Provider | https://registry.terraform.io/providers/ansible/ansible/latest/docs |
-| Terraform 1.14 Action Blocks | https://developer.hashicorp.com/terraform/language/resources/ephemeral/action |
+| k3s-ansible playbooks | <https://github.com/k3s-io/k3s-ansible> |
+| Terraform Ansible Provider | <https://registry.terraform.io/providers/ansible/ansible/latest/docs> |
+| Terraform 1.14 Action Blocks | <https://developer.hashicorp.com/terraform/language/resources/ephemeral/action> |
 
 ### Existing Module Conventions
 
