@@ -31,14 +31,14 @@
 
 **Primary recommendation: OKE (Approach 1)** for users who want a production-like managed Kubernetes experience. OKE's control plane is free, requires fewer new modules (2 vs 3), and is proven by multiple community implementations with 300+ combined GitHub stars.
 
-**Secondary recommendation: K3s (Approach 2)** for users who want full control, multi-architecture clusters (Arm + AMD), or Terraform 1.14's `action` feature. K3s uses all free tier compute (including the 2 AMD Micro instances OKE cannot use), yielding a 5-node cluster vs OKE's 2-4 nodes.
+**Secondary recommendation: K3s (Approach 2)** for users who want full control, multi-architecture clusters (Arm + AMD), or Terraform 1.14's `action` feature. K3s can include the 2 AMD Micro instances that OKE cannot use, but the 200 GB storage limit caps all approaches at **4 nodes** (each node requires a minimum 47–50 GB boot volume).
 
 | Factor | OKE | K3s |
 |--------|-----|-----|
 | Implementation complexity | Medium | High |
 | New modules required | 2 (`oke_cluster`, `oke_node_pool`) | 3 (`security_list`, `network_security_group`, `k3s_cluster`) |
 | Maintenance burden | Low (Oracle manages control plane) | Medium (self-managed upgrades via Ansible) |
-| Node count (free tier) | 2-4 Arm nodes | 3 Arm + 2 AMD = 5 nodes |
+| Node count (free tier) | 2-4 Arm nodes | 4 nodes max (storage-limited): 2 Arm + 2 AMD, or 4 Arm |
 | External dependencies | None | Ansible, k3s-ansible playbooks |
 | Terraform version | >= 1.0 | >= 1.14 (for `action` block) |
 | Community precedent | 3 proven repos | 2 repos (kubeadm, not K3s) |
@@ -62,17 +62,19 @@
 
 ### Resource Consumption by Approach
 
-| Resource | Free Limit | OKE (2-node) | OKE Remaining | K3s (5-node) | K3s Remaining |
-|----------|-----------|--------------|---------------|--------------|---------------|
-| Arm OCPUs | 4 | 2 (1/node) | 2 | 4 (2+1+1) | 0 |
-| Arm Memory | 24 GB | 12 GB (6/node) | 12 GB | 24 GB (8+8+8) | 0 GB |
+| Resource | Free Limit | OKE (2-node) | OKE Remaining | K3s (4-node: 2 Arm + 2 AMD) | K3s Remaining |
+|----------|-----------|--------------|---------------|------------------------------|---------------|
+| Arm OCPUs | 4 | 2 (1/node) | 2 | 2 (1/node, or 2+0 split) | 2 |
+| Arm Memory | 24 GB | 12 GB (6/node) | 12 GB | 12 GB (6/node) | 12 GB |
 | AMD Micro | 2 | 0 (OKE can't use) | 2 | 2 (lightweight workers) | 0 |
-| Boot Volumes | 200 GB | 100 GB (50/node) | 100 GB | 150 GB (50x3 Arm) + 2x ~47 GB (AMD) = ~194 GB | ~6 GB |
+| Boot Volumes | 200 GB | 100 GB (50/node) | 100 GB | 2×50 GB (Arm) + 2×47 GB (AMD) = 194 GB | 6 GB |
 | Flexible LB | 1 | 1 (ingress) | 0 | 1 (ingress) | 0 |
 | Network LB | 1 | 0-1 | 0-1 | 0-1 | 0-1 |
 | VCNs | 2 | 1 | 1 | 1 | 1 |
 
-**Note:** OKE can also run 4 nodes (1 OCPU + 6 GB each) consuming all Arm resources, with 100 GB boot volumes (200 GB total), matching the pattern used by [nce/oci-free-cloud-k8s](https://github.com/nce/oci-free-cloud-k8s). This leaves 0 GB spare storage but 2 AMD Micros unused.
+**Storage constraint:** Each node requires a minimum 47–50 GB boot volume. With the 200 GB total limit, the maximum node count is **4** across both approaches. Five nodes would require a minimum of ~235 GB (3×50 + 2×47), exceeding the limit.
+
+**Note:** OKE can also run 4 nodes (1 OCPU + 6 GB each) consuming all Arm resources, with 50 GB boot volumes (200 GB total). This leaves 2 AMD Micros unused (OKE worker nodes must be managed via node pools, which don't support AMD Micro shapes for K8s workloads).
 
 ---
 
@@ -214,13 +216,13 @@ module "network_security_group" { source = "...oci/network_security_group" } # o
          [Public Subnet]           [LB Subnet]
          10.0.0.0/24              10.0.1.0/24
               |                        |
-   +----------+----------+       [Flex LB 10Mbps]
-   |     |     |    |    |       (ingress controller)
- srv-1 agt-1 agt-2 amd1 amd2
- A1.Flex A1.Flex A1.Flex Micro Micro
- 2 OCPU 1 OCPU 1 OCPU  1/8   1/8
- 8 GB   8 GB   8 GB    1 GB  1 GB
- (server) (agent) (agent) (agent) (agent)
+   +----------+-----+       [Flex LB 10Mbps]
+   |     |     |    |       (ingress controller)
+ srv-1 agt-1 amd1 amd2
+ A1.Flex A1.Flex Micro Micro
+ 1 OCPU 1 OCPU  1/8   1/8
+ 6 GB   6 GB    1 GB  1 GB
+ (server)(agent) (agent) (agent)
               |
         [NAT Gateway]
               |
@@ -229,14 +231,41 @@ module "network_security_group" { source = "...oci/network_security_group" } # o
 
 ### Node Distribution
 
+The 200 GB block storage limit (boot + block volumes combined) caps the cluster at **4 nodes**: each node requires a minimum 47–50 GB boot volume (3×50 + 2×47 = 244 GB for 5 nodes — exceeds the limit). The K3s advantage over OKE is not node count but **architecture diversity**: it can include the 2 AMD Micro instances that OKE node pools cannot use.
+
+**Option A: 2 Arm + 2 AMD (maximize architecture diversity)**
+
 | Node | Shape | OCPU | RAM | Role | Boot Vol | Rationale |
 |------|-------|------|-----|------|----------|-----------|
-| `k3s-server-1` | `VM.Standard.A1.Flex` | 2 | 8 GB | K3s server (control plane + etcd) | 50 GB | Control plane needs more resources |
-| `k3s-agent-1` | `VM.Standard.A1.Flex` | 1 | 8 GB | K3s agent (worker) | 50 GB | Primary workload node |
-| `k3s-agent-2` | `VM.Standard.A1.Flex` | 1 | 8 GB | K3s agent (worker) | 50 GB | Primary workload node |
-| `k3s-agent-3` | `VM.Standard.E2.1.Micro` | 1/8 | 1 GB | K3s agent (lightweight) | 47 GB | Edge/monitoring workloads |
-| `k3s-agent-4` | `VM.Standard.E2.1.Micro` | 1/8 | 1 GB | K3s agent (lightweight) | 47 GB | Edge/monitoring workloads |
-| **Total** | | **4.25** | **26 GB** | 1 server + 4 agents | **~194 GB** | Uses all free tier compute |
+| `k3s-server-1` | `VM.Standard.A1.Flex` | 1 | 6 GB | K3s server (control plane + etcd) | 50 GB | Arm; control plane |
+| `k3s-agent-1` | `VM.Standard.A1.Flex` | 1 | 6 GB | K3s agent (worker) | 50 GB | Arm workload node |
+| `k3s-agent-2` | `VM.Standard.E2.1.Micro` | 1/8 | 1 GB | K3s agent (lightweight) | 47 GB | AMD; ingress/monitoring |
+| `k3s-agent-3` | `VM.Standard.E2.1.Micro` | 1/8 | 1 GB | K3s agent (lightweight) | 47 GB | AMD; ingress/monitoring |
+| **Total** | | **2.25 OCPU** | **14 GB** | 1 server + 3 agents | **194 GB** | Uses Arm + AMD compute |
+
+**Option B: 4 Arm (maximize Arm compute)**
+
+| Node | Shape | OCPU | RAM | Role | Boot Vol | Rationale |
+|------|-------|------|-----|------|----------|-----------|
+| `k3s-server-1` | `VM.Standard.A1.Flex` | 2 | 8 GB | K3s server (control plane + etcd) | 50 GB | More RAM for etcd + API |
+| `k3s-agent-1` | `VM.Standard.A1.Flex` | 1 | 8 GB | K3s agent (worker) | 50 GB | Arm workload node |
+| `k3s-agent-2` | `VM.Standard.A1.Flex` | 1 | 8 GB | K3s agent (worker) | 50 GB | Arm workload node |
+| `k3s-agent-3` | `VM.Standard.A1.Flex` | 0 OCPU* | 0 GB* | — | 50 GB | *Only 4 OCPU total: 2+1+1 exhausts it |
+| **Total** | | **4 OCPU** | **24 GB** | 1 server + 2 agents | **200 GB** | Uses all Arm OCPU + RAM + storage |
+
+> **Note for Option B:** With `2+1+1 = 4 OCPU` and `8+8+8 = 24 GB` the budget is exactly exhausted across 3 nodes. A 4th Arm node would require more OCPU/RAM and exceed the budget. So Option B is effectively 3 Arm nodes unless you use smaller allocations (e.g., `1+1+1+1 OCPU` and `6+6+6+6 GB = 24 GB`, `4×50 GB = 200 GB` exactly).
+
+**Recommended default (plan implements Option B with 4×1 OCPU / 6 GB / 50 GB):**
+
+| Node | Shape | OCPU | RAM | Role | Boot Vol |
+|------|-------|------|-----|------|----------|
+| `k3s-server-1` | `VM.Standard.A1.Flex` | 1 | 6 GB | K3s server | 50 GB |
+| `k3s-agent-1` | `VM.Standard.A1.Flex` | 1 | 6 GB | K3s agent | 50 GB |
+| `k3s-agent-2` | `VM.Standard.A1.Flex` | 1 | 6 GB | K3s agent | 50 GB |
+| `k3s-agent-3` | `VM.Standard.A1.Flex` | 1 | 6 GB | K3s agent | 50 GB |
+| **Total** | | **4 OCPU** | **24 GB** | 1 server + 3 agents | **200 GB** |
+
+This mirrors the proven ampernetacle pattern (4×A1.Flex, 1 OCPU + 6 GB each). Switch to Option A if mixed-arch support is required.
 
 **Note:** K3s supports mixed-architecture clusters (amd64 + arm64) natively. Workloads must use multi-arch images or be scheduled with node affinity.
 
@@ -403,7 +432,7 @@ module "k3s_server" {
 
 | Pros | Cons |
 |------|------|
-| Uses ALL free tier compute (Arm + AMD = 5 nodes) | Self-managed control plane (no Oracle HA) |
+| Can use AMD Micro instances as workers (OKE cannot) | Self-managed control plane (no Oracle HA) |
 | Multi-architecture cluster (amd64 + arm64) | Requires Terraform >= 1.14 (for `action` block) |
 | Full control over K8s configuration | Requires Ansible installed on Terraform runner |
 | Lighter than full K8s (K3s ~100 MB binary) | Mixed-arch workloads need multi-arch images |
@@ -420,8 +449,8 @@ module "k3s_server" {
 | **Cost** | $0 | $0 |
 | **Control plane** | Oracle-managed, HA (3 nodes) | Self-managed, single server |
 | **Worker nodes** | 2-4 Arm A1.Flex | 3 Arm + 2 AMD Micro = 5 nodes |
-| **Total cluster RAM** | 12-24 GB (workers only) | 26 GB (including control plane) |
-| **Total cluster OCPUs** | 2-4 (Arm only) | 4.25 (4 Arm + 0.25 AMD) |
+| **Total cluster RAM** | 12-24 GB (workers only) | 24 GB (4 Arm) or 14 GB (2 Arm + 2 AMD) |
+| **Total cluster OCPUs** | 2-4 (Arm only) | 4 Arm, or 2 Arm + 0.25 AMD |
 | **K8s version control** | Oracle-provided versions | Any K3s release |
 | **Upgrade mechanism** | OKE node cycling / manual | Ansible `upgrade.yml` playbook |
 | **OCI LB integration** | Native (`LoadBalancer` service auto-creates OCI LB) | Manual (point LB at NodePort) |
@@ -867,50 +896,41 @@ resource "local_sensitive_file" "ssh_key" {
   file_permission = "0600"
 }
 
-# 6. K3s server (Arm A1.Flex - 2 OCPU, 8 GB)
+# 6. K3s server (Arm A1.Flex - 1 OCPU, 6 GB)
+# Note: 4 nodes × 50 GB boot = 200 GB exactly (storage limit).
+# For mixed-arch (2 Arm + 2 AMD), swap modules 7 and 8 below and adjust
+# agent_ips accordingly; AMD Micro boot volumes are ~47 GB each (194 GB total).
 module "k3s_server" {
-  source              = "../../oci/compute"
-  shape               = "VM.Standard.A1.Flex"
-  shape_ocpus         = 2
-  shape_memory_in_gbs = 8
+  source                = "../../oci/compute"
+  shape                 = "VM.Standard.A1.Flex"
+  shape_ocpus           = 1
+  shape_memory_in_gbs   = 6
   instance_display_name = "k3s-server"
-  ssh_authorized_keys = tls_private_key.k3s.public_key_openssh
-  user_data           = base64encode(file("${path.module}/cloud-init.yaml"))
-  assign_public_ip    = true
+  ssh_authorized_keys   = tls_private_key.k3s.public_key_openssh
+  user_data             = base64encode(file("${path.module}/cloud-init.yaml"))
+  assign_public_ip      = true
 }
 
-# 7. K3s Arm agents (2x A1.Flex - 1 OCPU, 8 GB each)
+# 7. K3s Arm agents (3x A1.Flex - 1 OCPU, 6 GB each)
+# Together with the server: 4 × 1 OCPU + 4 × 6 GB = 4 OCPU + 24 GB (exactly the free limit).
+# 4 × 50 GB boot = 200 GB (exactly the storage limit).
 module "k3s_arm_agent" {
-  count               = 2
-  source              = "../../oci/compute"
-  shape               = "VM.Standard.A1.Flex"
-  shape_ocpus         = 1
-  shape_memory_in_gbs = 8
+  count                 = 3
+  source                = "../../oci/compute"
+  shape                 = "VM.Standard.A1.Flex"
+  shape_ocpus           = 1
+  shape_memory_in_gbs   = 6
   instance_display_name = "k3s-arm-agent-${count.index + 1}"
-  ssh_authorized_keys = tls_private_key.k3s.public_key_openssh
-  user_data           = base64encode(file("${path.module}/cloud-init.yaml"))
-  assign_public_ip    = true
+  ssh_authorized_keys   = tls_private_key.k3s.public_key_openssh
+  user_data             = base64encode(file("${path.module}/cloud-init.yaml"))
+  assign_public_ip      = true
 }
 
-# 8. K3s AMD agents (2x E2.1.Micro)
-module "k3s_amd_agent" {
-  count               = 2
-  source              = "../../oci/compute"
-  shape               = "VM.Standard.E2.1.Micro"
-  instance_display_name = "k3s-amd-agent-${count.index + 1}"
-  ssh_authorized_keys = tls_private_key.k3s.public_key_openssh
-  user_data           = base64encode(file("${path.module}/cloud-init.yaml"))
-  assign_public_ip    = true
-}
-
-# 9. Deploy K3s via Ansible
+# 8. Deploy K3s via Ansible
 module "k3s_cluster" {
-  source = "../../oci/k3s_cluster"
-  server_ips = [module.k3s_server.instance_public_ip]
-  agent_ips = concat(
-    [for agent in module.k3s_arm_agent : agent.instance_public_ip],
-    [for agent in module.k3s_amd_agent : agent.instance_public_ip]
-  )
+  source               = "../../oci/k3s_cluster"
+  server_ips           = [module.k3s_server.instance_public_ip]
+  agent_ips            = [for agent in module.k3s_arm_agent : agent.instance_public_ip]
   ssh_private_key_path = local_sensitive_file.ssh_key.filename
   ssh_user             = "ubuntu"
 }
