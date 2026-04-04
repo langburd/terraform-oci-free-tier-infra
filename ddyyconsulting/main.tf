@@ -9,14 +9,14 @@ locals {
 }
 
 module "oci_profile_reader" {
-  # source       = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oci_profile_reader/v1.0.0"
-  source       = "../../terraform-oci-free-tier-modules/oci/oci_profile_reader"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oci_profile_reader/v1.0.0"
+  # source       = "../../terraform-oci-free-tier-modules/oci/oci_profile_reader"
   profile_name = local.profile_name
 }
 
 module "dev_compartment" {
-  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/identity/v1.0.1"
-  source = "../../terraform-oci-free-tier-modules/oci/identity"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/identity/v1.0.1"
+  # source = "../../terraform-oci-free-tier-modules/oci/identity"
 
   oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
   compartment_name          = "Dev"
@@ -25,8 +25,8 @@ module "dev_compartment" {
 }
 
 module "dev_budget" {
-  # source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/budget/v1.0.1"
-  source = "../../terraform-oci-free-tier-modules/oci/budget"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/budget/v1.0.1"
+  # source = "../../terraform-oci-free-tier-modules/oci/budget"
 
   budget_compartment_id = module.oci_profile_reader.oci_profile_data.tenancy
   budget_freeform_tags  = local.default_tags
