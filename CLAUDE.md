@@ -24,6 +24,20 @@ Terraform configurations for Oracle Cloud Infrastructure (OCI) Free Tier resourc
 - Never push directly to `master` — always create a feature branch and open a PR
 - PRs merge into `master`
 
+## Non-Obvious Gotchas
+
+- **State upload failures (chunked encoding)**: OCI Object Storage doesn't support AWS chunked transfer encoding. If Terraform fails to save state with `api error NotImplemented: AWS chunked encoding not supported`, it writes the state to `errored.tfstate` locally. Push it manually with:
+  ```bash
+  oci os object put \
+    --namespace <namespace> \
+    --bucket-name <bucket> \
+    --name <key> \
+    --file errored.tfstate \
+    --profile <profile> \
+    --force
+  ```
+  The `use_lockfile = false` backend setting reduces (but does not eliminate) how often this occurs.
+
 ## Conventions
 
 - Terraform version >= 1.0, OCI provider ~> 8.0
