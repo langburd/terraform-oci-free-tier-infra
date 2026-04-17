@@ -3,7 +3,7 @@ locals {
   default_tags = {
     "Environment" = "Dev"
     "GitRepo"     = "https://github.com/langburd/terraform-oci-free-tier-infra/tree/master/ddyyconsulting"
-    "ManagedBy"   = "Terraform"
+    "ManagedBy"   = "OpenTofu"
     "Owner"       = "avi@langburd.com"
   }
 }
