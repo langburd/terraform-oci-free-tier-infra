@@ -1,24 +1,11 @@
-# This file is maintained automatically by "terraform init".
+# This file is maintained automatically by "tofu init".
 # Manual edits may be lost in future updates.
 
-provider "registry.terraform.io/oracle/oci" {
+provider "registry.opentofu.org/oracle/oci" {
   version     = "8.10.0"
   constraints = ">= 6.0.0, >= 6.15.0, ~> 8.0"
   hashes = [
-    "h1:+8qM7MXWCfrUBRlM/zHeNyiPBBvimgDE7Dbl8JlmMZc=",
-    "h1:Ayk7zq4rEmTGsFAoIbqXCBssC5aIzOZMTVelASKLZx8=",
-    "h1:C+xr7A7+geRRotE+TgKQf2jko+9XJJN0Y3y52EPktuE=",
-    "h1:IjXL+4yQqT7nmJWfhbtroX1BIzsyI6j9EYMI52MZtzc=",
-    "h1:LrGW+3OJmX1MkYcQqVEVHXJGjeDw1nGhDfa/1ql4nNA=",
-    "h1:MaqmCMhf0iQnaiTI4k358Usd455VKYYpTbA+semFHzc=",
-    "h1:RSAIqkx70k4Q3f6hhxsp4M3ZctpnnPrByzechzbY2kU=",
     "h1:ZF86BRM782SNsPwsiTOT1abNU6hnfb7q7KUWZFEko3g=",
-    "h1:b9OIrLCB7PxmclOWH5AeoI37CnxV9sYrx0uWUmjLzaA=",
-    "h1:dRrsQ6UgPqUiYg+M1TDed99bPySIRzsmxcH3ccvVcFk=",
-    "h1:fugoZ9NRUYQpWxXThd+zpJE+M4g8OIsRTj/+uBABZd4=",
-    "h1:hAAjebBM9CTv/ONSgTfd7k17V2CXVZUMTK2ypWRuqHE=",
-    "h1:tbK3qH3PlsBUMpZfVagMmI3VpZVzPiL5fWMCKuQ8K1U=",
-    "h1:xj/crML4yRXkZ4kUyV+bMlaNP1jSG7A7XXqflE/0Jz4=",
     "zh:0b22770a902ddd4d8cae218b046eba9e85fcda36a7ab2832a127af996d970ae6",
     "zh:123272ea9a7b153c38390bd073bc347f2d657677349792f2e00071834d1d86fc",
     "zh:1beda414966276fb2f24b22197f24fbb8aeb6eb44a4f2f8c5c18d7c1f31de1e8",
