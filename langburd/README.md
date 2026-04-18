@@ -26,7 +26,7 @@ Get your namespace with the command:
 oci os ns get
 ```
 
-You will need it to configure the remote backend in the `providers.tofu` file.
+You will need it to configure the remote backend in the `providers.tf` file.
 
 ### Installing OpenTofu
 
