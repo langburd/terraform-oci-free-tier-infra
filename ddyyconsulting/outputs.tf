@@ -113,8 +113,13 @@ output "oke_bastion_connect" {
       --query 'data.id' --raw-output)
     echo "Session: $SESSION_ID"
 
+    # --- Wait for session to become ACTIVE (~15-30s) ---
+    until [ "$(oci bastion session get --session-id "$SESSION_ID" --profile ddyyconsulting --query 'data."lifecycle-state"' --raw-output 2>/dev/null)" = "ACTIVE" ]; do
+      echo "waiting for session..."; sleep 5
+    done
+    echo "Session ACTIVE — starting tunnel"
+
     # --- Step 2: open SSH tunnel (run in a separate terminal, keep running) ---
-    # (replace <session-ocid> with $SESSION_ID from above)
     ssh -N -L $${LOCAL_PORT}:${module.oke_cluster.cluster_endpoints[0].private_endpoint} \
       -p 22 "$SESSION_ID@host.bastion.il-jerusalem-1.oci.oraclecloud.com" \
       -i ~/.ssh/langburd \
