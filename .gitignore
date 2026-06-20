@@ -35,3 +35,4 @@ terraform.rc
 
 # Temporary files
 temp/
+docs/superpowers/
