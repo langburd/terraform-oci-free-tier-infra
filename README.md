@@ -25,3 +25,7 @@ tofu apply
 ```
 
 Authentication uses profile-based config from `~/.oci/config`.
+
+### Accessing the OKE cluster
+
+The `ddyyconsulting/` environment runs a private OKE cluster reachable only through an OCI Bastion. See [`ddyyconsulting/README.md`](ddyyconsulting/README.md) for the bastion tunnel workflow and the `oke-connect` helper.
