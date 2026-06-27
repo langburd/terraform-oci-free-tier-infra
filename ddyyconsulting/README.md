@@ -107,10 +107,12 @@ oke-connect() {
   echo "oke-connect: configuring kubeconfig context ${KCTX}"
   oci ce cluster create-kubeconfig --cluster-id "${CLUSTER_ID}" \
     --file "${HOME}/.kube/config" --region "${REGION}" --token-version 2.0.0 \
-    --kube-endpoint PRIVATE_ENDPOINT --profile "${PROFILE}" >/dev/null 2>&1
+    --kube-endpoint PRIVATE_ENDPOINT --profile "${PROFILE}" >/dev/null 2>&1 \
+    || { echo "oke-connect: failed to create kubeconfig" >&2; return 1; }
 
   local oci_suffix
   oci_suffix=$(kubectl config view -o jsonpath='{.clusters[*].name}' | tr ' ' '\n' | grep '^cluster-' | sed 's/cluster-//' | head -1)
+  [[ -n "${oci_suffix}" ]] || { echo "oke-connect: could not find generated OCI cluster entry in kubeconfig" >&2; return 1; }
 
   kubectl config set-credentials "${KCTX}" \
     --exec-api-version=client.authentication.k8s.io/v1beta1 --exec-command=oci \

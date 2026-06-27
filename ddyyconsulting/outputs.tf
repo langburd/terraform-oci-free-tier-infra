@@ -122,7 +122,7 @@ output "oke_bastion_connect" {
       -p 22 "$SESSION_ID@host.bastion.il-jerusalem-1.oci.oraclecloud.com" \
       -i ~/.ssh/langburd \
       -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-      -o KexAlgorithms=ecdh-sha2-nistp256
+      -o KexAlgorithms=ecdh-sha2-nistp256 -o IdentitiesOnly=yes
 
     # --- Step 3: generate and configure kubeconfig (sets server to the local tunnel and embeds the CA) ---
     $(tofu output -raw oke_kubeconfig_command)
