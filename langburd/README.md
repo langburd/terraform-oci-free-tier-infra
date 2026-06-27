@@ -16,8 +16,8 @@ The resources include a Virtual Cloud Network (VCN), subnets, route tables, secu
 ```bash
 export OCI_CLI_PROFILE=langburd
 oci iam customer-secret-key create \
-  --display-name avi@langburd.com \
-  --user-id ocid1.user.oc1..aaaaaaaasyvx7c4gqyqvn44uot2vikmx2qzcsrlwq5nqwdennrq5wa5gcgua
+  --display-name <your-email> \
+  --user-id <your-user-ocid>
 ```
 
 Get your namespace with the command:
