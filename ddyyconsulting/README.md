@@ -93,7 +93,7 @@ oke-connect() {
     ssh -N -f -L "${LOCAL_PORT}:${TARGET_IP}:${TARGET_PORT}" \
       -p 22 "${session_id}@${BASTION_HOST}" -i "${SSH_KEY}" \
       -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-      -o KexAlgorithms=ecdh-sha2-nistp256 -o ExitOnForwardFailure=yes \
+      -o KexAlgorithms=ecdh-sha2-nistp256 -o IdentitiesOnly=yes -o ExitOnForwardFailure=yes \
       || { echo "oke-connect: ssh tunnel failed to start" >&2; return 1; }
 
     local wait=0
@@ -181,3 +181,4 @@ Notes:
 - Bastion sessions expire after 30 min; `oke-connect` creates a fresh one when the old one is gone.
 - The local port (`6443`) and SSH key paths are configurable at the top of the function.
 - The `KexAlgorithms=ecdh-sha2-nistp256` option is required — the OCI bastion SSH host only offers that key exchange.
+- `IdentitiesOnly=yes` is required so `ssh` offers only the `-i` key. Without it, keys loaded in `ssh-agent` are offered first and the bastion rejects them with `Permission denied (publickey)` before the correct key is tried.
