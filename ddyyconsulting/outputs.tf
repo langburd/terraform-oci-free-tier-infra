@@ -89,12 +89,10 @@ output "oke_bastion_connect" {
 
     Step 2 — open the SSH tunnel in a separate terminal and keep it running.
 
-    Step 3 — generate and configure kubeconfig (run `tofu output -raw oke_kubeconfig_command` and execute the printed script).
+    Step 3 — generate and configure kubeconfig (run `tofu output -raw oke_kubeconfig_command` and execute the printed script;
+      it sets the server to the local tunnel and embeds the cluster CA).
 
-    Step 4 — patch the kubeconfig server URL:
-      kubectl config set-cluster <cluster-name> --server=https://127.0.0.1:LOCAL_PORT
-
-    Step 5 — verify:
+    Step 4 — verify:
       kubectl get nodes
   EOT
   sensitive   = true
@@ -126,13 +124,10 @@ output "oke_bastion_connect" {
       -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
       -o KexAlgorithms=ecdh-sha2-nistp256
 
-    # --- Step 3: generate kubeconfig ---
+    # --- Step 3: generate and configure kubeconfig (sets server to the local tunnel and embeds the CA) ---
     $(tofu output -raw oke_kubeconfig_command)
 
-    # --- Step 4: patch server URL to local tunnel ---
-    kubectl config set-cluster ddyy-oke --server=https://127.0.0.1:$${LOCAL_PORT} --embed-certs=false
-
-    # --- Step 5: verify ---
+    # --- Step 4: verify ---
     kubectl get nodes
   EOT
 }

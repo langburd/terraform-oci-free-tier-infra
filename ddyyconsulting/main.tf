@@ -46,9 +46,10 @@ data "http" "my_ip" {
 
 locals {
   # Region-agnostic Oracle Services Network CIDR label, used by the Service Gateway routes.
-  oci_services_cidr = [for s in data.oci_core_services.all.services :
+  oci_services_candidates = [for s in data.oci_core_services.all.services :
     s.cidr_block if length(regexall("All .* Services In Oracle Services Network", s.name)) > 0
-  ][0]
+  ]
+  oci_services_cidr = local.oci_services_candidates[0]
 
   # Caller's current public IP as a /32, used to scope bastion client access.
   my_cidr = "${chomp(data.http.my_ip.response_body)}/32"
@@ -70,6 +71,15 @@ locals {
   kubernetes_version = "v1.34.2"
 }
 
+# Fail early with a clear message if the Oracle Services Network CIDR label can
+# not be resolved (e.g. the service name format changed) before indexing it.
+check "oci_services_cidr_resolved" {
+  assert {
+    condition     = length(local.oci_services_candidates) > 0
+    error_message = "Could not resolve the 'All Services In Oracle Services Network' CIDR from oci_core_services."
+  }
+}
+
 # OKE-compatible ARM image for the node pool, resolved via the OKE node pool options API.
 # Filters to the newest OL8 aarch64 image matching the configured kubernetes version.
 # OL9 OKE ARM images are not yet available in il-jerusalem-1 as of 2026-06.
@@ -81,12 +91,22 @@ data "oci_containerengine_node_pool_option" "arm" {
 }
 
 locals {
-  # Latest OL8 aarch64 OKE image matching the configured kubernetes version.
-  arm_image_id = [
+  # OL8 aarch64 OKE images matching the configured kubernetes version.
+  arm_image_candidates = [
     for s in data.oci_containerengine_node_pool_option.arm.sources :
     s.image_id
     if can(regex("Oracle-Linux-8.*aarch64.*OKE-${replace(local.kubernetes_version, "v", "")}", s.source_name))
-  ][0]
+  ]
+  arm_image_id = local.arm_image_candidates[0]
+}
+
+# Fail early with a clear message if the configured kubernetes_version has no
+# matching OL8 aarch64 OKE image (e.g. version bumped before the image exists).
+check "arm_image_available" {
+  assert {
+    condition     = length(local.arm_image_candidates) > 0
+    error_message = "No OL8 aarch64 OKE image found for kubernetes_version ${local.kubernetes_version} in this region."
+  }
 }
 
 # --- OKE networking ---
@@ -168,10 +188,10 @@ module "api_endpoint_nsg" {
     }
     bastion_to_api = {
       protocol    = "6"
-      source      = local.cidr_vcn
+      source      = local.cidr_api_subnet
       source_type = "CIDR_BLOCK"
       tcp_options = { destination_port_range = { min = 6443, max = 6443 } }
-      description = "In-VCN (bastion session) to Kubernetes API"
+      description = "Bastion session (in API subnet) to Kubernetes API"
     }
     path_mtu_icmp = {
       protocol     = "1"
