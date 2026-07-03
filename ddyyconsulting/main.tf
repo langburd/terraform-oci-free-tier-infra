@@ -4,7 +4,6 @@ locals {
     "Environment" = "Dev"
     "GitRepo"     = "https://github.com/langburd/terraform-oci-free-tier-infra/tree/master/ddyyconsulting"
     "ManagedBy"   = "OpenTofu"
-    "Owner"       = "<your-email>"
   }
 }
 

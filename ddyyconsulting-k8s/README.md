@@ -62,7 +62,7 @@ kubectl -n argocd get application root
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.8.4 |
 | <a name="requirement_cloudflare"></a> [cloudflare](#requirement\_cloudflare) | ~> 5.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 3.0 |
@@ -73,7 +73,7 @@ kubectl -n argocd get application root
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | 5.21.1 |
 | <a name="provider_helm"></a> [helm](#provider\_helm) | 3.2.0 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | 2.38.0 |
@@ -88,7 +88,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [cloudflare_dns_record.argocd](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
 | [helm_release.argocd](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.cert_manager](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
@@ -112,7 +112,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_acme_email"></a> [acme\_email](#input\_acme\_email) | Contact email for Let's Encrypt ACME registration. | `string` | `"alerts@ddyy.pro"` | no |
 | <a name="input_argocd_admin_password_bcrypt"></a> [argocd\_admin\_password\_bcrypt](#input\_argocd\_admin\_password\_bcrypt) | Bcrypt hash of the ArgoCD admin password (htpasswd -nbBC 10 "" <pw> \| tr -d ':\n' \| sed 's/$2y/$2a/'). | `string` | n/a | yes |
 | <a name="input_argocd_admin_password_mtime"></a> [argocd\_admin\_password\_mtime](#input\_argocd\_admin\_password\_mtime) | Fixed RFC3339 timestamp for argocdServerAdminPasswordMtime. Set ONCE (e.g. 2026-06-27T00:00:00Z). Changing it resets the admin password; do not use a dynamic value. | `string` | `"2026-06-27T00:00:00Z"` | no |
@@ -127,7 +127,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_argocd_admin_hint"></a> [argocd\_admin\_hint](#output\_argocd\_admin\_hint) | How to log in to ArgoCD. |
 | <a name="output_argocd_url"></a> [argocd\_url](#output\_argocd\_url) | ArgoCD UI URL. |
 | <a name="output_gitops_deploy_public_key"></a> [gitops\_deploy\_public\_key](#output\_gitops\_deploy\_public\_key) | Public half of the TF-generated deploy key. Add this to langburd/gitops → Settings → Deploy keys (read-only). |
