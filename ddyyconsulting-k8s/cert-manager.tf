@@ -1,11 +1,3 @@
-resource "kubernetes_namespace" "cert_manager" {
-  metadata { name = local.namespaces.cert_manager }
-}
-
-resource "kubernetes_namespace" "argocd" {
-  metadata { name = local.namespaces.argocd }
-}
-
 resource "helm_release" "cert_manager" {
   name        = "cert-manager"
   namespace   = kubernetes_namespace.cert_manager.metadata[0].name
@@ -40,7 +32,7 @@ resource "kubernetes_manifest" "letsencrypt_issuer" {
     spec = {
       acme = {
         server              = "https://acme-v02.api.letsencrypt.org/directory"
-        email               = var.acme_email
+        email               = local.acme_email
         privateKeySecretRef = { name = "letsencrypt-cloudflare-account-key" }
         solvers = [{
           dns01 = {
@@ -51,7 +43,7 @@ resource "kubernetes_manifest" "letsencrypt_issuer" {
               }
             }
           }
-          selector = { dnsZones = [var.cloudflare_zone_name] }
+          selector = { dnsZones = [local.cloudflare_zone_name] }
         }]
       }
     }
@@ -73,7 +65,7 @@ resource "kubernetes_manifest" "argocd_certificate" {
     }
     spec = {
       secretName = local.cert_secret_name
-      dnsNames   = [var.argocd_fqdn]
+      dnsNames   = [local.argocd_fqdn]
       issuerRef = {
         name = "letsencrypt-cloudflare"
         kind = "ClusterIssuer"

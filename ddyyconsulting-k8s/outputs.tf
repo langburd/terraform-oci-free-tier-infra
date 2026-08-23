@@ -1,6 +1,6 @@
 output "argocd_url" {
   description = "ArgoCD UI URL."
-  value       = "https://${var.argocd_fqdn}"
+  value       = "https://${local.argocd_fqdn}"
 }
 
 output "traefik_lb_ip" {
@@ -10,7 +10,7 @@ output "traefik_lb_ip" {
 
 output "argocd_admin_hint" {
   description = "How to log in to ArgoCD."
-  value       = "Login at https://${var.argocd_fqdn} as 'admin' with the password whose bcrypt hash was supplied via argocd_admin_password_bcrypt."
+  value       = "Login at https://${local.argocd_fqdn} as 'admin' with the password whose bcrypt hash was supplied via argocd_admin_password_bcrypt."
 }
 
 output "gitops_deploy_public_key" {

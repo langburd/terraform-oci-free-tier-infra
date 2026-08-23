@@ -1,7 +1,7 @@
 locals {
   # Confirmed in Task 4 — Traefik chart names the Gateway after the release ("traefik")
   # and its listeners "web" / "websecure". Override here if the kubectl check differs.
-  traefik_gateway_name = "traefik"
+  traefik_gateway_name = "traefik-gateway"
 }
 
 # HTTPRoute: argocd.ddyy.pro -> argocd-server (port 80, insecure; TLS ends at Traefik).
@@ -19,7 +19,7 @@ resource "kubernetes_manifest" "argocd_httproute" {
         namespace   = local.namespaces.traefik
         sectionName = "websecure"
       }]
-      hostnames = [var.argocd_fqdn]
+      hostnames = [local.argocd_fqdn]
       rules = [{
         matches     = [{ path = { type = "PathPrefix", value = "/" } }]
         backendRefs = [{ name = "argocd-server", port = 80 }]
@@ -46,7 +46,7 @@ resource "kubernetes_manifest" "argocd_http_redirect" {
         namespace   = local.namespaces.traefik
         sectionName = "web"
       }]
-      hostnames = [var.argocd_fqdn]
+      hostnames = [local.argocd_fqdn]
       rules = [{
         filters = [{
           type = "RequestRedirect"
@@ -77,7 +77,7 @@ resource "kubernetes_secret" "gitops_repo" {
   }
   data = {
     type          = "git"
-    url           = var.gitops_repo_url
+    url           = local.gitops_repo_url
     sshPrivateKey = tls_private_key.deploy.private_key_openssh
   }
   type       = "Opaque"
@@ -96,9 +96,9 @@ resource "kubernetes_manifest" "root_app" {
     spec = {
       project = "default"
       source = {
-        repoURL        = var.gitops_repo_url
-        path           = var.gitops_repo_path
-        targetRevision = var.gitops_repo_branch
+        repoURL        = local.gitops_repo_url
+        path           = local.gitops_repo_path
+        targetRevision = local.gitops_repo_branch
       }
       destination = {
         server    = "https://kubernetes.default.svc"

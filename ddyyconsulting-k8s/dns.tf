@@ -12,12 +12,12 @@ locals {
 
 # Cloudflare zone lookup (provider v5).
 data "cloudflare_zone" "this" {
-  filter = { name = var.cloudflare_zone_name }
+  filter = { name = local.cloudflare_zone_name }
 }
 
 resource "cloudflare_dns_record" "argocd" {
   zone_id = data.cloudflare_zone.this.zone_id
-  name    = var.argocd_fqdn
+  name    = local.argocd_fqdn
   type    = "A"
   content = local.traefik_lb_ip
   ttl     = 60

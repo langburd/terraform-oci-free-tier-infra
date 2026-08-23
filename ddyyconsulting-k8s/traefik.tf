@@ -1,7 +1,3 @@
-resource "kubernetes_namespace" "traefik" {
-  metadata { name = local.namespaces.traefik }
-}
-
 resource "helm_release" "traefik" {
   name        = "traefik"
   namespace   = kubernetes_namespace.traefik.metadata[0].name
@@ -14,7 +10,7 @@ resource "helm_release" "traefik" {
 
   values = [
     templatefile("${path.module}/helm-values/traefik/values.yaml.tpl", {
-      argocd_fqdn      = var.argocd_fqdn
+      argocd_fqdn      = local.argocd_fqdn
       cert_secret_name = local.cert_secret_name
     })
   ]

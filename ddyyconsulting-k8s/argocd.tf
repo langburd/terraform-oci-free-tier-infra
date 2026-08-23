@@ -10,7 +10,7 @@ resource "helm_release" "argocd" {
 
   values = [
     templatefile("${path.module}/helm-values/argocd/values.yaml.tpl", {
-      argocd_fqdn          = var.argocd_fqdn
+      argocd_fqdn          = local.argocd_fqdn
       admin_password_hash  = var.argocd_admin_password_bcrypt
       admin_password_mtime = var.argocd_admin_password_mtime
     })

@@ -17,14 +17,40 @@ provider (`oci_containerengine_cluster_kube_config`) — the OKE module does not
 2. Open the OCI Bastion tunnel so `127.0.0.1:6443` reaches the private API endpoint
    (see `../ddyyconsulting` output `oke_bastion_connect`). The Kubernetes/Helm providers
    and all `kubernetes_manifest` resources require this at PLAN time.
-3. Export the chunked-encoding workaround and secrets:
-   ```bash
-   export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
-   export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
-   export TF_VAR_cloudflare_api_token=...   # Zone:DNS:Edit @ ddyy.pro
-   export TF_VAR_certmanager_cf_token=...   # Zone:DNS:Edit + Zone:Zone:Read @ ddyy.pro
-   export TF_VAR_argocd_admin_password_bcrypt='$2a$...'
-   ```
+3. Export the chunked-encoding workaround and the secrets.
+
+## Configuration
+
+Non-secret configuration (FQDN, DNS zone, ACME email, GitOps repo URL/path/branch,
+namespaces, chart versions) is fixed in [`locals.tf`](./locals.tf) — edit there, no
+`terraform.tfvars` needed. Only secrets are supplied at runtime, via `TF_VAR_*`
+environment variables (never committed):
+
+| Env var | Secret | Cloudflare scope |
+| --- | --- | --- |
+| `TF_VAR_cloudflare_api_token` | Cloudflare token for the TF provider (creates the A record) | `Zone:DNS:Edit` @ `ddyy.pro` |
+| `TF_VAR_certmanager_cf_token` | Cloudflare token for cert-manager DNS-01 | `Zone:DNS:Edit` + `Zone:Zone:Read` @ `ddyy.pro` |
+| `TF_VAR_argocd_admin_password_bcrypt` | Bcrypt hash of the ArgoCD admin password | — |
+
+See [`docs/cloudflare-tokens.md`](../docs/cloudflare-tokens.md) for how to mint the two
+Cloudflare tokens. Generate the bcrypt hash with:
+
+```bash
+htpasswd -nbBC 10 "" '<password>' | tr -d ':\n' | sed 's/$2y/$2a/'
+```
+
+Export everything before running `tofu`:
+
+```bash
+export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
+export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
+export TF_VAR_cloudflare_api_token=...        # Zone:DNS:Edit @ ddyy.pro
+export TF_VAR_certmanager_cf_token=...         # Zone:DNS:Edit + Zone:Zone:Read @ ddyy.pro
+export TF_VAR_argocd_admin_password_bcrypt='$2a$...'
+```
+
+`argocd_admin_password_mtime` stays a variable (default `2026-06-27T00:00:00Z`); override
+it only if you deliberately want to reset the admin password.
 
 ## Post-apply, one-time (deploy key)
 
@@ -37,16 +63,41 @@ ArgoCD's repo connection stays "failed" until this is done.
 
 ## First apply (CRD ordering)
 
-`kubernetes_manifest` resources need their CRDs present at plan time. On a clean cluster,
-apply the charts first, then the manifests:
+`kubernetes_manifest` performs a server-side dry-run at **plan time** — CRDs must exist in
+the cluster before `tofu plan` runs. `depends_on` only controls apply ordering, not
+plan-time CRD availability. On a clean cluster, install charts in three targeted steps
+before running a full apply:
 
 ```bash
-tofu apply -target=helm_release.cert_manager
-tofu apply -target=helm_release.traefik -target=helm_release.argocd
+# Step 1 — namespaces + cert-manager (installs ClusterIssuer/Certificate CRDs)
+tofu apply \
+  -target=kubernetes_namespace.cert_manager \
+  -target=kubernetes_namespace.argocd \
+  -target=kubernetes_namespace.traefik \
+  -target=helm_release.cert_manager
+
+# Step 2 — Traefik (installs Gateway/HTTPRoute/GatewayClass CRDs)
+tofu apply -target=helm_release.traefik
+
+# Step 3 — ArgoCD (installs Application CRD)
+tofu apply -target=helm_release.argocd
+
+# Step 4 — all kubernetes_manifest resources + remainder (CRDs now present)
 tofu apply
 ```
 
-Subsequent applies need no targeting.
+Subsequent applies on an already-provisioned cluster need no targeting.
+
+### Stuck Helm release
+
+If a targeted apply fails mid-install, Helm leaves the release in `pending-install`.
+OpenTofu's next apply will error: `cannot re-use a name that is still in use`. Fix:
+
+```bash
+helm uninstall <release> -n <namespace>
+```
+
+Then retry the targeted apply.
 
 ## Verify
 
@@ -113,16 +164,10 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_acme_email"></a> [acme\_email](#input\_acme\_email) | Contact email for Let's Encrypt ACME registration. | `string` | `"alerts@ddyy.pro"` | no |
 | <a name="input_argocd_admin_password_bcrypt"></a> [argocd\_admin\_password\_bcrypt](#input\_argocd\_admin\_password\_bcrypt) | Bcrypt hash of the ArgoCD admin password (htpasswd -nbBC 10 "" <pw> \| tr -d ':\n' \| sed 's/$2y/$2a/'). | `string` | n/a | yes |
 | <a name="input_argocd_admin_password_mtime"></a> [argocd\_admin\_password\_mtime](#input\_argocd\_admin\_password\_mtime) | Fixed RFC3339 timestamp for argocdServerAdminPasswordMtime. Set ONCE (e.g. 2026-06-27T00:00:00Z). Changing it resets the admin password; do not use a dynamic value. | `string` | `"2026-06-27T00:00:00Z"` | no |
-| <a name="input_argocd_fqdn"></a> [argocd\_fqdn](#input\_argocd\_fqdn) | FQDN for the ArgoCD UI. | `string` | `"argocd.ddyy.pro"` | no |
 | <a name="input_certmanager_cf_token"></a> [certmanager\_cf\_token](#input\_certmanager\_cf\_token) | Cloudflare API token for cert-manager DNS-01 (Zone:DNS:Edit + Zone:Zone:Read on the zone). | `string` | n/a | yes |
 | <a name="input_cloudflare_api_token"></a> [cloudflare\_api\_token](#input\_cloudflare\_api\_token) | Cloudflare API token for the TF provider (Zone:DNS:Edit on the zone). | `string` | n/a | yes |
-| <a name="input_cloudflare_zone_name"></a> [cloudflare\_zone\_name](#input\_cloudflare\_zone\_name) | Cloudflare DNS zone hosting the FQDN. | `string` | `"ddyy.pro"` | no |
-| <a name="input_gitops_repo_branch"></a> [gitops\_repo\_branch](#input\_gitops\_repo\_branch) | Branch the ArgoCD root app tracks. | `string` | `"master"` | no |
-| <a name="input_gitops_repo_path"></a> [gitops\_repo\_path](#input\_gitops\_repo\_path) | Path inside the GitOps repo for the app-of-apps root. | `string` | `"apps"` | no |
-| <a name="input_gitops_repo_url"></a> [gitops\_repo\_url](#input\_gitops\_repo\_url) | SSH (scp-style) URL of the private GitOps repo. MUST be git@host:org/repo.git, not https:// — ArgoCD matches the SSH key only against scp-style URLs. | `string` | `"git@github.com:langburd/gitops.git"` | no |
 
 ## Outputs
 
