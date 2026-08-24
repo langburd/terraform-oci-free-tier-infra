@@ -20,7 +20,7 @@ locals {
 
   # GitOps repo the ArgoCD root app-of-apps tracks. url MUST be scp-style SSH
   # (git@host:org/repo.git) — ArgoCD matches the SSH key only against that form.
-  gitops_repo_branch = "feat/argocd-gateway-api" # "master"
+  gitops_repo_branch = "master"
   gitops_repo_path   = "apps"
   gitops_repo_url    = "git@github.com:langburd/gitops.git"
 
