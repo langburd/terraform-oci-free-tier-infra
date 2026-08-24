@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars and fill, OR pass via TF_VAR_*. Do NOT commit real secrets.
+argocd_fqdn          = "argocd.ddyy.pro"
+cloudflare_zone_name = "ddyy.pro"
+acme_email           = "alerts@ddyy.pro"
+gitops_repo_url      = "git@github.com:langburd/gitops.git"
+gitops_repo_path     = "apps"
+gitops_repo_branch   = "master"
+
+# Secrets — prefer environment: export TF_VAR_cloudflare_api_token=... etc.
+# cloudflare_api_token         = ""
+# certmanager_cf_token         = ""
+# argocd_admin_password_bcrypt = ""
