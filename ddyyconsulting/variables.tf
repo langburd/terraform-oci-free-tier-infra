@@ -80,3 +80,14 @@ variable "ssh_public_key" {
     error_message = "ssh_public_key must be a valid OpenSSH public key (e.g. starting with 'ssh-ed25519' or 'ssh-rsa')."
   }
 }
+
+variable "argocd_allowed_cidrs" {
+  description = "CIDR blocks allowed to reach the public LB on 80/443. Empty list falls back to the caller's detected IP (my_cidr)."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for c in var.argocd_allowed_cidrs : can(cidrhost(c, 0))])
+    error_message = "Each entry in argocd_allowed_cidrs must be a valid CIDR (e.g. 203.0.113.4/32)."
+  }
+}
