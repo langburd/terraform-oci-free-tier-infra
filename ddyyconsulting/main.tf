@@ -43,6 +43,14 @@ data "http" "my_ip" {
   url = "https://checkip.amazonaws.com"
 }
 
+# Cloudflare's published edge ranges. argocd.ddyy.pro is a proxied record, so all
+# legitimate traffic to the public LB originates from these. IPv4 only — the LB has
+# no IPv6 address, so Cloudflare always reaches it over IPv4.
+# The ddyyconsulting-k8s layer reads the same list via data.cloudflare_ip_ranges.
+data "http" "cloudflare_ips_v4" {
+  url = "https://www.cloudflare.com/ips-v4"
+}
+
 locals {
   # Region-agnostic Oracle Services Network CIDR label, used by the Service Gateway routes.
   oci_services_candidates = [for s in data.oci_core_services.all.services :
@@ -63,8 +71,14 @@ locals {
   cidr_lb         = "10.0.3.0/24"
   cidr_all        = "0.0.0.0/0"
 
-  # LB ingress allowlist: explicit CIDRs if provided, else the caller's /32.
-  lb_allowed_cidrs = length(var.argocd_allowed_cidrs) > 0 ? var.argocd_allowed_cidrs : [local.my_cidr]
+  cloudflare_ipv4_cidrs = compact(split("\n", chomp(data.http.cloudflare_ips_v4.response_body)))
+
+  # LB ingress allowlist: Cloudflare's edge ranges (the FQDN is a proxied record),
+  # plus any explicit extras. NOT the caller's /32 — the operator's browser never
+  # talks to the origin directly, and pinning it here would lock Cloudflare out.
+  # Per-user access control lives in the ddyyconsulting-k8s layer instead
+  # (Cloudflare WAF rule + Traefik ipAllowList, both scoped to the hostname).
+  lb_allowed_cidrs = concat(local.cloudflare_ipv4_cidrs, var.lb_extra_ingress_cidrs)
 
   # Worker node shape.
   node_shape = "VM.Standard.A1.Flex"
@@ -229,27 +243,57 @@ module "worker_nsg" {
   nsg_display_name  = "oke-worker-nsg"
   nsg_freeform_tags = local.default_tags
 
-  ingress_rules = {
-    worker_to_worker = {
-      protocol    = "all"
-      source      = local.cidr_worker
-      source_type = "CIDR_BLOCK"
-      description = "Inter-worker communication"
-    }
-    api_to_workers = {
+  ingress_rules = merge(
+    {
+      worker_to_worker = {
+        protocol    = "all"
+        source      = local.cidr_worker
+        source_type = "CIDR_BLOCK"
+        description = "Inter-worker communication"
+      }
+      api_to_workers = {
+        protocol    = "6"
+        source      = local.cidr_api_subnet
+        source_type = "CIDR_BLOCK"
+        description = "API endpoint to worker nodes"
+      }
+      path_mtu_icmp = {
+        protocol     = "1"
+        source       = local.cidr_all
+        source_type  = "CIDR_BLOCK"
+        icmp_options = { type = 3, code = 4 }
+        description  = "Path MTU discovery"
+      }
+      # externalTrafficPolicy: Local makes kube-proxy allocate a healthCheckNodePort
+      # and the NLB probes THAT, not the shared kube-proxy port 10256. Its number is
+      # assigned dynamically from the NodePort range and cannot be pinned without
+      # recreating the Service, so the rule covers the whole range. Without this the
+      # NLB marks every backend CRITICAL and answers nothing — Cloudflare 522.
+      nlb_healthcheck_nodeports = {
+        protocol    = "6"
+        source      = local.cidr_lb
+        source_type = "CIDR_BLOCK"
+        tcp_options = { destination_port_range = { min = 30000, max = 32767 } }
+        description = "NLB health checks to NodePort range"
+      }
+    },
+    # Data path. The NLB has is-preserve-source = true (a consequence of
+    # externalTrafficPolicy: Local), so packets arrive at the NodePort carrying the
+    # ORIGINAL client address — a Cloudflare edge IP — not the LB's private IP in
+    # cidr_lb. Rules scoped to cidr_lb therefore never match the data path.
+    #
+    # These rules are also the origin's real lockdown: Service.loadBalancerSourceRanges
+    # is silently ignored by the OCI CCM for NLBs (it creates no NSG and writes no
+    # security list rule), so this NSG is the only thing keeping non-Cloudflare
+    # traffic out of the cluster.
+    { for cidr in local.cloudflare_ipv4_cidrs : "cloudflare_nodeports_${replace(cidr, "/", "_")}" => {
       protocol    = "6"
-      source      = local.cidr_api_subnet
+      source      = cidr
       source_type = "CIDR_BLOCK"
-      description = "API endpoint to worker nodes"
-    }
-    path_mtu_icmp = {
-      protocol     = "1"
-      source       = local.cidr_all
-      source_type  = "CIDR_BLOCK"
-      icmp_options = { type = 3, code = 4 }
-      description  = "Path MTU discovery"
-    }
-  }
+      tcp_options = { destination_port_range = { min = 30000, max = 32767 } }
+      description = "Cloudflare ${cidr} to NodePort services"
+    } },
+  )
 
   egress_rules = {
     worker_to_worker = {
