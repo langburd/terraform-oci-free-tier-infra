@@ -29,3 +29,30 @@ Authentication uses profile-based config from `~/.oci/config`.
 ### Accessing the OKE cluster
 
 The `ddyyconsulting/` environment runs a private OKE cluster reachable only through an OCI Bastion. See [`ddyyconsulting/README.md`](ddyyconsulting/README.md) for the bastion tunnel workflow and the `oke-connect` helper.
+
+### `ddyyconsulting-k8s/` — first apply (multi-step)
+
+The k8s layer uses `kubernetes_manifest` which dry-runs against the live API at **plan
+time** — CRDs must already exist in the cluster. On a clean cluster, install in four steps:
+
+```bash
+cd ddyyconsulting-k8s
+
+# Step 1 — namespaces + cert-manager (ClusterIssuer/Certificate CRDs)
+tofu apply \
+  -target=kubernetes_namespace.cert_manager \
+  -target=kubernetes_namespace.argocd \
+  -target=kubernetes_namespace.traefik \
+  -target=helm_release.cert_manager
+
+# Step 2 — Traefik (Gateway/HTTPRoute/GatewayClass CRDs)
+tofu apply -target=helm_release.traefik
+
+# Step 3 — ArgoCD (Application CRD)
+tofu apply -target=helm_release.argocd
+
+# Step 4 — all remaining resources
+tofu apply
+```
+
+Subsequent applies need no targeting. See [`ddyyconsulting-k8s/README.md`](ddyyconsulting-k8s/README.md) for prerequisites, secrets, and post-apply steps.

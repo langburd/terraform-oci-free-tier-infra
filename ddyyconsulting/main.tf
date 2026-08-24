@@ -4,7 +4,6 @@ locals {
     "Environment" = "Dev"
     "GitRepo"     = "https://github.com/langburd/terraform-oci-free-tier-infra/tree/master/ddyyconsulting"
     "ManagedBy"   = "OpenTofu"
-    "Owner"       = "<your-email>"
   }
 }
 
@@ -63,6 +62,9 @@ locals {
   cidr_worker     = "10.0.2.0/24"
   cidr_lb         = "10.0.3.0/24"
   cidr_all        = "0.0.0.0/0"
+
+  # LB ingress allowlist: explicit CIDRs if provided, else the caller's /32.
+  lb_allowed_cidrs = length(var.argocd_allowed_cidrs) > 0 ? var.argocd_allowed_cidrs : [local.my_cidr]
 
   # Worker node shape.
   node_shape = "VM.Standard.A1.Flex"
@@ -293,22 +295,22 @@ module "lb_nsg" {
   nsg_display_name  = "oke-lb-nsg"
   nsg_freeform_tags = local.default_tags
 
-  ingress_rules = {
-    http_ingress = {
+  ingress_rules = merge(
+    { for cidr in local.lb_allowed_cidrs : "http_ingress_${replace(cidr, "/", "_")}" => {
       protocol    = "6"
-      source      = local.cidr_all
+      source      = cidr
       source_type = "CIDR_BLOCK"
       tcp_options = { destination_port_range = { min = 80, max = 80 } }
-      description = "HTTP ingress"
-    }
-    https_ingress = {
+      description = "HTTP ingress from ${cidr}"
+    } },
+    { for cidr in local.lb_allowed_cidrs : "https_ingress_${replace(cidr, "/", "_")}" => {
       protocol    = "6"
-      source      = local.cidr_all
+      source      = cidr
       source_type = "CIDR_BLOCK"
       tcp_options = { destination_port_range = { min = 443, max = 443 } }
-      description = "HTTPS ingress"
-    }
-  }
+      description = "HTTPS ingress from ${cidr}"
+    } },
+  )
 
   egress_rules = {
     lb_to_nodeport = {
