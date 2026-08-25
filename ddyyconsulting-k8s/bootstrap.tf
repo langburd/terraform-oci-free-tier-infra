@@ -4,6 +4,46 @@ locals {
   traefik_gateway_name = "traefik-gateway"
 }
 
+# Per-FQDN IP allowlist, origin-side half (the edge half is waf.tf). Gateway API has
+# no core IP filter, so this is a Traefik Middleware attached to the argocd HTTPRoute
+# via an ExtensionRef filter below. ExtensionRef carries no namespace field -> the
+# Middleware MUST live in the same namespace as the HTTPRoute referencing it.
+# Non-matching clients get 403.
+#
+# ipStrategy.depth is mandatory here: the DNS record is Cloudflare-proxied, so the
+# connection's source IP is always a Cloudflare edge IP. depth = 1 reads the
+# rightmost X-Forwarded-For entry, which is the IP Cloudflare itself observed —
+# anything a client prepends to XFF sits to the left of it and cannot spoof this.
+# Requires forwardedHeaders.trustedIPs (Cloudflare ranges) on the websecure
+# entrypoint, else Traefik discards the inbound XFF header.
+#
+# Verify from an allowed host (expect 200) and a non-allowed one (expect 403):
+#   curl -s -o /dev/null -w '%{http_code}\n' https://argocd.ddyy.pro/
+# If everything 403s, the depth is off by one for this Traefik version — check what
+# the middleware actually saw (access logs are enabled in the Traefik values):
+#   kubectl -n traefik logs deploy/traefik | tail -20
+resource "kubernetes_manifest" "argocd_ipallow" {
+  manifest = {
+    apiVersion = "traefik.io/v1alpha1"
+    kind       = "Middleware"
+    metadata = {
+      name      = "argocd-ipallow"
+      namespace = local.namespaces.argocd
+    }
+    spec = {
+      ipAllowList = {
+        sourceRange = var.argocd_client_cidrs
+        ipStrategy  = { depth = 1 }
+      }
+    }
+  }
+  computed_fields = ["metadata.labels", "metadata.annotations"]
+  # helm_release.traefik for the Middleware CRD; kubernetes_namespace.argocd because
+  # local.namespaces.argocd is a literal string and creates no implicit dependency —
+  # without it a fresh apply can fail with `namespaces "argocd" not found`.
+  depends_on = [helm_release.traefik, kubernetes_namespace.argocd]
+}
+
 # HTTPRoute: argocd.ddyy.pro -> argocd-server (port 80, insecure; TLS ends at Traefik).
 resource "kubernetes_manifest" "argocd_httproute" {
   manifest = {
@@ -21,14 +61,31 @@ resource "kubernetes_manifest" "argocd_httproute" {
       }]
       hostnames = [local.argocd_fqdn]
       rules = [{
-        matches     = [{ path = { type = "PathPrefix", value = "/" } }]
+        matches = [{ path = { type = "PathPrefix", value = "/" } }]
+        filters = [{
+          type = "ExtensionRef"
+          extensionRef = {
+            group = "traefik.io"
+            kind  = "Middleware"
+            # Literal, not a resource reference: argocd_ipallow.manifest carries the
+            # sensitive CIDR list and referencing into it would taint this manifest.
+            name = "argocd-ipallow"
+          }
+        }]
         backendRefs = [{ name = "argocd-server", port = 80 }]
       }]
     }
   }
   # Suppress plan churn on server-defaulted fields.
+  #
+  # WARNING: "spec.rules" is computed, so the provider ignores config changes under
+  # it — edits to matches/filters/backendRefs produce NO diff. After changing them
+  # (including this filter block), force recreation once:
+  #   tofu apply -replace=kubernetes_manifest.argocd_httproute
+  # Then confirm:
+  #   kubectl -n argocd get httproute argocd -o yaml
   computed_fields = ["metadata.labels", "metadata.annotations", "spec.rules"]
-  depends_on      = [helm_release.argocd, helm_release.traefik]
+  depends_on      = [helm_release.argocd, helm_release.traefik, kubernetes_manifest.argocd_ipallow]
 }
 
 # HTTPRoute: native Gateway API HTTP->HTTPS 301 redirect on the :80 (web) listener.
@@ -85,12 +142,12 @@ resource "kubernetes_secret" "gitops_repo" {
 }
 
 # --- Root Application (app-of-apps) ---
-resource "kubernetes_manifest" "root_app" {
+resource "kubernetes_manifest" "app_of_apps" {
   manifest = {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "Application"
     metadata = {
-      name      = "root"
+      name      = "app-of-apps"
       namespace = local.namespaces.argocd
     }
     spec = {

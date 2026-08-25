@@ -25,6 +25,17 @@ output "oke_cluster_endpoints" {
   value       = module.oke_cluster.cluster_endpoints
 }
 
+output "oke_lb_nsg_id" {
+  description = <<-EOT
+    OCID of the NSG carrying the public LB 80/443 ingress allowlist. The OCI CCM does
+    not manage security rules for NLBs, so the ddyyconsulting-k8s layer must attach
+    this NSG to the Traefik Service via the
+    oci-network-load-balancer.oraclecloud.com/network-security-group-ids annotation —
+    otherwise nothing permits edge traffic into the load balancer.
+  EOT
+  value       = module.lb_nsg.nsg_id
+}
+
 output "oke_node_pool_id" {
   description = "OCID of the OKE node pool."
   value       = module.oke_node_pool.node_pool_id

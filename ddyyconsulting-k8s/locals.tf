@@ -12,6 +12,11 @@ locals {
   cluster_ca = yamldecode(data.oci_containerengine_cluster_kube_config.this.content)["clusters"][0]["cluster"]["certificate-authority-data"]
   cluster_id = data.terraform_remote_state.infra.outputs.oke_cluster_id
 
+  # NSG holding the public LB 80/443 ingress allowlist (Cloudflare's edge ranges).
+  # The OCI CCM manages security rules for LBaaS but NOT for NLBs, so the NSG has to
+  # be attached explicitly through a Service annotation — see the traefik values.
+  lb_nsg_id = data.terraform_remote_state.infra.outputs.oke_lb_nsg_id
+
   # Fixed, non-secret configuration for this environment. Secrets stay as
   # sensitive variables (see variables.tf) and are supplied via TF_VAR_*.
   acme_email           = "alerts@ddyy.pro"
