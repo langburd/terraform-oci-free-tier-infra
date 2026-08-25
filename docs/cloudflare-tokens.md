@@ -89,7 +89,7 @@ Tokens can be rolled without downtime:
 2. For the **TF token:** update `TF_VAR_cloudflare_api_token` and re-run `tofu apply` (or
    just the next apply picks it up — the token is not persisted as a managed resource).
 3. For the **cert-manager token:** update `TF_VAR_certmanager_cf_token` and
-   `tofu apply` — the `kubernetes_secret.cloudflare_token` resource updates the in-cluster
+   `tofu apply` — the `kubernetes_secret_v1.cloudflare_token` resource updates the in-cluster
    Secret. cert-manager reloads it automatically.
 4. Delete the old token in the Cloudflare dashboard once the new one is confirmed working.
 

@@ -40,9 +40,9 @@ cd ddyyconsulting-k8s
 
 # Step 1 — namespaces + cert-manager (ClusterIssuer/Certificate CRDs)
 tofu apply \
-  -target=kubernetes_namespace.cert_manager \
-  -target=kubernetes_namespace.argocd \
-  -target=kubernetes_namespace.traefik \
+  -target=kubernetes_namespace_v1.cert_manager \
+  -target=kubernetes_namespace_v1.argocd \
+  -target=kubernetes_namespace_v1.traefik \
   -target=helm_release.cert_manager
 
 # Step 2 — Traefik (Gateway/HTTPRoute/GatewayClass CRDs)
