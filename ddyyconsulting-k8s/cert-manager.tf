@@ -1,6 +1,6 @@
 resource "helm_release" "cert_manager" {
   name        = "cert-manager"
-  namespace   = kubernetes_namespace.cert_manager.metadata[0].name
+  namespace   = kubernetes_namespace_v1.cert_manager.metadata[0].name
   repository  = "https://charts.jetstack.io"
   chart       = "cert-manager"
   version     = local.chart_versions.cert_manager
@@ -14,10 +14,10 @@ resource "helm_release" "cert_manager" {
 }
 
 # Cloudflare API token Secret for the DNS-01 solver.
-resource "kubernetes_secret" "cloudflare_token" {
+resource "kubernetes_secret_v1" "cloudflare_token" {
   metadata {
     name      = "cloudflare-api-token"
-    namespace = kubernetes_namespace.cert_manager.metadata[0].name
+    namespace = kubernetes_namespace_v1.cert_manager.metadata[0].name
   }
   data = { api-token = var.certmanager_cf_token }
   type = "Opaque"
@@ -38,7 +38,7 @@ resource "kubernetes_manifest" "letsencrypt_issuer" {
           dns01 = {
             cloudflare = {
               apiTokenSecretRef = {
-                name = kubernetes_secret.cloudflare_token.metadata[0].name
+                name = kubernetes_secret_v1.cloudflare_token.metadata[0].name
                 key  = "api-token"
               }
             }
@@ -61,7 +61,7 @@ resource "kubernetes_manifest" "argocd_certificate" {
     kind       = "Certificate"
     metadata = {
       name      = "argocd-tls"
-      namespace = kubernetes_namespace.traefik.metadata[0].name
+      namespace = kubernetes_namespace_v1.traefik.metadata[0].name
     }
     spec = {
       secretName = local.cert_secret_name

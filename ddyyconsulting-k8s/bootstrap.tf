@@ -38,10 +38,10 @@ resource "kubernetes_manifest" "argocd_ipallow" {
     }
   }
   computed_fields = ["metadata.labels", "metadata.annotations"]
-  # helm_release.traefik for the Middleware CRD; kubernetes_namespace.argocd because
+  # helm_release.traefik for the Middleware CRD; kubernetes_namespace_v1.argocd because
   # local.namespaces.argocd is a literal string and creates no implicit dependency —
   # without it a fresh apply can fail with `namespaces "argocd" not found`.
-  depends_on = [helm_release.traefik, kubernetes_namespace.argocd]
+  depends_on = [helm_release.traefik, kubernetes_namespace_v1.argocd]
 }
 
 # HTTPRoute: argocd.ddyy.pro -> argocd-server (port 80, insecure; TLS ends at Traefik).
@@ -126,7 +126,7 @@ resource "tls_private_key" "deploy" {
 }
 
 # --- ArgoCD repository Secret (SSH) ---
-resource "kubernetes_secret" "gitops_repo" {
+resource "kubernetes_secret_v1" "gitops_repo" {
   metadata {
     name      = "gitops-repo"
     namespace = local.namespaces.argocd
@@ -168,5 +168,5 @@ resource "kubernetes_manifest" "app_of_apps" {
     }
   }
   computed_fields = ["metadata.labels", "metadata.annotations", "status"]
-  depends_on      = [kubernetes_secret.gitops_repo]
+  depends_on      = [kubernetes_secret_v1.gitops_repo]
 }
