@@ -38,7 +38,10 @@ resource "kubernetes_manifest" "argocd_ipallow" {
     }
   }
   computed_fields = ["metadata.labels", "metadata.annotations"]
-  depends_on      = [helm_release.traefik]
+  # helm_release.traefik for the Middleware CRD; kubernetes_namespace.argocd because
+  # local.namespaces.argocd is a literal string and creates no implicit dependency —
+  # without it a fresh apply can fail with `namespaces "argocd" not found`.
+  depends_on = [helm_release.traefik, kubernetes_namespace.argocd]
 }
 
 # HTTPRoute: argocd.ddyy.pro -> argocd-server (port 80, insecure; TLS ends at Traefik).

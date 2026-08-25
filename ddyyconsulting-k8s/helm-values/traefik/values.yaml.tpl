@@ -5,9 +5,20 @@
 # charge, leaving the free-tier flexible LB allowance unused.
 # Switching type recreates the LB, so the public IP changes — dns.tf re-reads it
 # from the Service status and re-applies the Cloudflare A record.
+#
+# CHANGING TYPE IS NOT AN IN-PLACE UPGRADE: the OCI CCM cannot convert an existing
+# LBaaS Service into an NLB. On an already-deployed cluster, delete the Service (or
+# `helm uninstall traefik`) once so the CCM tears down the old LBaaS and provisions
+# the NLB from scratch. Skipping this leaves the LBaaS in place — it still proxies and
+# rewrites the source IP, so trustedIPs below never matches and every request 403s.
 service:
   annotations:
     oci.oraclecloud.com/load-balancer-type: "nlb"
+    # The CCM manages security list rules for LBaaS but NOT for NLBs, so without this
+    # nothing permits Cloudflare -> LB:80/443 and the edge gets a 522. The NSG is
+    # created in ../ddyyconsulting (module "lb_nsg") and its rules are scoped to
+    # Cloudflare's ranges plus var.lb_extra_ingress_cidrs.
+    oci-network-load-balancer.oraclecloud.com/network-security-group-ids: "${lb_nsg_id}"
   spec:
     # Mandatory: with the default "Cluster" policy kube-proxy SNATs incoming
     # packets and Traefik sees a node IP, so no connection would ever match

@@ -81,10 +81,11 @@ variable "ssh_public_key" {
   }
 }
 
-# Renamed from argocd_allowed_cidrs: that name collided with the variable of the same
-# name in ../ddyyconsulting-k8s (now argocd_client_cidrs), where it means "who may use
-# ArgoCD". A shared TF_VAR export would have replaced the Cloudflare ranges here with
-# one operator IP and cut the origin off from Cloudflare entirely.
+# Renamed from argocd_allowed_cidrs, which no longer described what this holds and
+# invited confusion with ../ddyyconsulting-k8s's argocd_client_cidrs ("who may use
+# ArgoCD"). A single TF_VAR_argocd_allowed_cidrs export shared between the two layers
+# would have replaced the Cloudflare ranges here with one operator IP and cut the
+# origin off from Cloudflare entirely.
 variable "lb_extra_ingress_cidrs" {
   description = "Extra CIDR blocks allowed to reach the public LB on 80/443, in addition to Cloudflare's edge ranges. Normally empty; use it to temporarily reach the origin directly while debugging."
   type        = list(string)

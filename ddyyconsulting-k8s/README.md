@@ -119,15 +119,20 @@ the edge rule. Gateway API has no core IP filter, hence the Traefik-specific
 `Middleware`; `ExtensionRef` has no namespace field, so the `Middleware` must stay in the
 same namespace as the `HTTPRoute` referencing it.
 
-Separately, the origin only accepts Cloudflare, enforced by `worker_nsg` ingress rules in
-the [`../ddyyconsulting`](../ddyyconsulting) layer that permit the NodePort range from
-Cloudflare's ranges only. That one is cluster-wide, not per-hostname.
+Separately, the origin only accepts Cloudflare, enforced by two NSGs in the
+[`../ddyyconsulting`](../ddyyconsulting) layer: `lb_nsg` (80/443 into the NLB) and
+`worker_nsg` (the NodePort range into the nodes), both scoped to Cloudflare's ranges.
+Those are cluster-wide, not per-hostname.
 
 > Do **not** try to do this with `Service.loadBalancerSourceRanges`. The OCI CCM silently
 > ignores it for NLBs — it creates no NSG on the load balancer and writes no security list
-> rule, so it reads as a lockdown while enforcing nothing. Verify with
+> rule, so it reads as a lockdown while enforcing nothing. `lb_nsg` is instead attached
+> explicitly through the
+> `oci-network-load-balancer.oraclecloud.com/network-security-group-ids` annotation in the
+> Traefik values; the CCM does not manage security rules for NLBs the way it does for
+> LBaaS, so without that annotation nothing permits edge traffic into the NLB. Verify with
 > `oci nlb network-load-balancer get --network-load-balancer-id <id> --query 'data."network-security-group-ids"'`;
-> an empty list means nothing was applied.
+> an empty list means the annotation did not take.
 
 ### The chain that makes the client IP trustworthy
 
@@ -197,7 +202,7 @@ kubectl get gatewayclass traefik
 kubectl -n traefik get gateway
 kubectl -n traefik get secret argocd-tls
 curl -sS -o /dev/null -w '%{http_code} %{ssl_verify_result}\n' https://argocd.ddyy.pro/healthz   # 200 0
-kubectl -n argocd get application root
+kubectl -n argocd get application app-of-apps
 
 # Proxying is live (expect a Cloudflare edge IP, not the NLB's, plus a cf-ray header).
 dig +short argocd.ddyy.pro

@@ -12,6 +12,7 @@ resource "helm_release" "traefik" {
     templatefile("${path.module}/helm-values/traefik/values.yaml.tpl", {
       argocd_fqdn      = local.argocd_fqdn
       cert_secret_name = local.cert_secret_name
+      lb_nsg_id        = local.lb_nsg_id
       # JSON is valid YAML flow syntax, which sidesteps block-list indentation
       # inside the template.
       cf_ipv4_cidrs_json = jsonencode(data.cloudflare_ip_ranges.cloudflare.ipv4_cidrs)

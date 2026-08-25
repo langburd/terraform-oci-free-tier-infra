@@ -9,8 +9,15 @@
 # Zone -> DNS -> Edit; see docs/cloudflare-tokens.md.
 #
 # CAUTION: cloudflare_ruleset owns the ENTIRE http_request_firewall_custom ruleset
-# for the zone. Custom rules added by hand in the dashboard will be deleted on the
-# next apply — add them here instead.
+# for the zone. Custom rules added by hand in the dashboard belong here instead.
+#
+# Cloudflare permits exactly ONE phase entry-point ruleset per zone, and this resource
+# creates it. If the zone already has any custom WAF rule (i.e. the entry point exists),
+# the first apply FAILS instead of adopting it — import it once before applying:
+#   RULESET_ID=$(curl -sS -H "Authorization: Bearer $TF_VAR_cloudflare_api_token" \
+#     "https://api.cloudflare.com/client/v4/zones/<zone-id>/rulesets/phases/http_request_firewall_custom/entrypoint" \
+#     | jq -r .result.id)
+#   tofu import cloudflare_ruleset.zone_firewall_custom "<zone-id>/$RULESET_ID"
 resource "cloudflare_ruleset" "zone_firewall_custom" {
   zone_id = data.cloudflare_zone.this.zone_id
   name    = "default"
