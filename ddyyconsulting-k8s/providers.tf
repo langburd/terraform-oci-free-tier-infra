@@ -24,7 +24,7 @@ terraform {
     helm       = { source = "hashicorp/helm", version = "~> 3.0" }
     cloudflare = { source = "cloudflare/cloudflare", version = "~> 5.0" }
     tls        = { source = "hashicorp/tls", version = "~> 4.0" }
-    oci        = { source = "oracle/oci", version = "~> 8.0" }
+    oci        = { source = "oracle/oci", version = "~> 9.0" }
   }
 }
 
