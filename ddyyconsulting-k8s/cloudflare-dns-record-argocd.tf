@@ -1,5 +1,5 @@
 resource "cloudflare_dns_record" "argocd" {
-  content = local.traefik_lb_ip
+  content = data.terraform_remote_state.infra.outputs.ingress_reserved_ip
   name    = local.argocd_fqdn
   # Proxied: hides the origin IP and lets the WAF rule in
   # cloudflare-ruleset-zone-firewall-custom.tf reject unwanted clients at the edge.

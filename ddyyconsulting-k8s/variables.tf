@@ -4,12 +4,6 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
-variable "certmanager_cf_token" {
-  description = "Cloudflare API token for cert-manager DNS-01 (Zone:DNS:Edit + Zone:Zone:Read on the zone)."
-  type        = string
-  sensitive   = true
-}
-
 variable "argocd_admin_password_bcrypt" {
   description = "Bcrypt hash of the ArgoCD admin password."
   type        = string

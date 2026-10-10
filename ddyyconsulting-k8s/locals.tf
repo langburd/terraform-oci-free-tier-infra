@@ -18,7 +18,7 @@ locals {
   # GitOps repo the ArgoCD root app-of-apps tracks. url MUST be scp-style SSH
   # (git@host:org/repo.git) — ArgoCD matches the SSH key only against that form.
   gitops_repo_branch = "master"
-  gitops_repo_path   = "apps"
+  gitops_repo_path   = "bootstrap"
   gitops_repo_url    = "git@github.com:langburd/gitops.git"
 
   namespaces = {
@@ -28,14 +28,6 @@ locals {
   }
 
   chart_versions = {
-    argocd       = "10.0.0"  # confirm: helm search repo argo/argo-cd
-    cert_manager = "v1.18.2" # confirm: helm search repo jetstack/cert-manager
-    traefik      = "37.0.0"  # confirm latest at apply: helm search repo traefik/traefik
+    argocd = "10.0.0" # confirm: helm search repo argo/argo-cd
   }
-
-  cert_secret_name = "argocd-tls"
-
-  # Confirmed in Task 4 — Traefik chart names the Gateway "<release>-gateway" ("traefik-gateway")
-  # and its listeners "web" / "websecure". Override here if the kubectl check differs.
-  traefik_gateway_name = "traefik-gateway"
 }
