@@ -35,7 +35,7 @@ locals {
 
   cert_secret_name = "argocd-tls"
 
-  # Confirmed in Task 4 — Traefik chart names the Gateway after the release ("traefik")
+  # Confirmed in Task 4 — Traefik chart names the Gateway "<release>-gateway" ("traefik-gateway")
   # and its listeners "web" / "websecure". Override here if the kubectl check differs.
   traefik_gateway_name = "traefik-gateway"
 }

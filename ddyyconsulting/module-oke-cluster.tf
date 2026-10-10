@@ -1,5 +1,3 @@
-# --- OKE cluster (private API endpoint) and ARM node pool ---
-
 module "oke_cluster" {
   source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oke_cluster/v1.0.1"
 

@@ -13,7 +13,7 @@ metadata for the DNS-01 challenge and lives inside the cluster as a Kubernetes S
 Both are scoped to **`ddyy.pro`** only. Do not grant account-wide or all-zones access.
 
 > `Zone WAF → Edit` was added when `argocd.ddyy.pro` became a proxied record. The
-> `cloudflare_ruleset` resource in `ddyyconsulting-k8s/waf.tf` manages the zone's
+> `cloudflare_ruleset` resource in `ddyyconsulting-k8s/cloudflare-ruleset-zone-firewall-custom.tf` manages the zone's
 > `http_request_firewall_custom` phase, which a DNS-only token cannot touch. If you are
 > rotating an older token, add this permission or `tofu apply` will fail on that resource.
 
@@ -126,4 +126,4 @@ Tokens can be rolled without downtime:
 - **Everything returns 403 from Traefik, not Cloudflare:** the `ipAllowList` Middleware
   read the wrong X-Forwarded-For position. Inspect the Traefik access log for the client
   IP it saw (`kubectl -n traefik logs deploy/traefik | tail -20`) and adjust
-  `ipStrategy.depth` in `ddyyconsulting-k8s/bootstrap.tf`.
+  `ipStrategy.depth` in `ddyyconsulting-k8s/kubernetes-manifest-argocd-ipallow.tf`.

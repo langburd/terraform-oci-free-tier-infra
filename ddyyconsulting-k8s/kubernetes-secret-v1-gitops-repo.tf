@@ -1,8 +1,3 @@
-# TF-generated read-only SSH deploy key (public half exported in outputs.tf).
-resource "tls_private_key" "deploy" {
-  algorithm = "ED25519"
-}
-
 # ArgoCD repository Secret (SSH).
 resource "kubernetes_secret_v1" "gitops_repo" {
   depends_on = [helm_release.argocd]

@@ -5,9 +5,7 @@ locals {
     "GitRepo"     = "https://github.com/langburd/terraform-oci-free-tier-infra/tree/master/ddyyconsulting"
     "ManagedBy"   = "OpenTofu"
   }
-}
 
-locals {
   # SSH public key with fallback to default location.
   ssh_public_key = var.ssh_public_key != null ? var.ssh_public_key : file(pathexpand("~/.ssh/langburd.pub"))
 

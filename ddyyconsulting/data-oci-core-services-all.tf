@@ -1,5 +1,3 @@
-# --- OKE cluster supporting data sources and locals ---
-
 data "oci_core_services" "all" {}
 
 locals {

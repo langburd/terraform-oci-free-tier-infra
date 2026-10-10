@@ -111,8 +111,8 @@ is unaffected.
 
 | Layer | Mechanism | Rejects with |
 | --- | --- | --- |
-| Cloudflare edge | `cloudflare_ruleset` custom rule, expression matches `http.host eq "argocd.ddyy.pro"` ([`waf.tf`](./waf.tf)) | Cloudflare `403` block page |
-| Origin (Traefik) | `Middleware` `ipAllowList` + `ipStrategy.depth = 1`, attached to the ArgoCD `HTTPRoute` via an `ExtensionRef` filter ([`bootstrap.tf`](./bootstrap.tf)) | Traefik `403` |
+| Cloudflare edge | `cloudflare_ruleset` custom rule, expression matches `http.host eq "argocd.ddyy.pro"` ([`cloudflare-ruleset-zone-firewall-custom.tf`](./cloudflare-ruleset-zone-firewall-custom.tf)) | Cloudflare `403` block page |
+| Origin (Traefik) | `Middleware` `ipAllowList` + `ipStrategy.depth = 1`, attached to the ArgoCD `HTTPRoute` via an `ExtensionRef` filter ([`kubernetes-manifest-argocd-ipallow.tf`](./kubernetes-manifest-argocd-ipallow.tf)) | Traefik `403` |
 
 The origin layer exists so that discovering the NLB's public IP is not enough to bypass
 the edge rule. Gateway API has no core IP filter, hence the Traefik-specific
@@ -139,7 +139,7 @@ Those are cluster-wide, not per-hostname.
 Every link is required; break one and the origin allowlist either fails open or fails
 closed:
 
-1. **A proxied DNS record** (`dns.tf`) means the TCP peer is always a Cloudflare edge IP,
+1. **A proxied DNS record** (`cloudflare-dns-record-argocd.tf`) means the TCP peer is always a Cloudflare edge IP,
    never the user. The real IP arrives only in `X-Forwarded-For`.
 2. **`data.cloudflare_ip_ranges`** feeds Cloudflare's published ranges into the Traefik
    entrypoint's `forwardedHeaders.trustedIPs`. Traefik discards an inbound `XFF` from any

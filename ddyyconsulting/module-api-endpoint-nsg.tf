@@ -1,5 +1,3 @@
-# --- OKE network security groups ---
-
 module "api_endpoint_nsg" {
   source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/network_security_group/v1.0.1"
 

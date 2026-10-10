@@ -1,5 +1,3 @@
-# --- OKE networking ---
-
 module "k8s_vcn" {
   source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vcn/v1.1.2"
 
