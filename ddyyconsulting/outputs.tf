@@ -148,3 +148,18 @@ output "oke_cluster_private_endpoint" {
   sensitive   = true
   value       = module.oke_cluster.cluster_endpoints[0].private_endpoint
 }
+
+output "ingress_reserved_ip" {
+  description = "Reserved public IP for the ingress NLB (consumed by ddyyconsulting-k8s via remote state)."
+  value       = oci_core_public_ip.ingress.ip_address
+}
+
+output "vault_id" {
+  description = "OCID of the ddyy-gitops OCI Vault (consumed by ddyyconsulting-k8s via remote state)."
+  value       = module.vault.vault_id
+}
+
+output "oci_region" {
+  description = "OCI region of the OKE cluster and Vault."
+  value       = "il-jerusalem-1"
+}
