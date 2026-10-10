@@ -3,8 +3,9 @@
 # Traefik could not tell a Cloudflare edge connection from any other. NLB preserves
 # it, which forwardedHeaders.trustedIPs below depends on. NLB is also free of
 # charge, leaving the free-tier flexible LB allowance unused.
-# Switching type recreates the LB, so the public IP changes — dns.tf re-reads it
-# from the Service status and re-applies the Cloudflare A record.
+# Switching type recreates the LB, so the public IP changes —
+# data-kubernetes-service-traefik.tf re-reads it from the Service status and
+# cloudflare-dns-record-argocd.tf re-applies the Cloudflare A record.
 #
 # CHANGING TYPE IS NOT AN IN-PLACE UPGRADE: the OCI CCM cannot convert an existing
 # LBaaS Service into an NLB. On an already-deployed cluster, delete the Service (or

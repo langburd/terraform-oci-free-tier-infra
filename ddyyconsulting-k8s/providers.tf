@@ -20,11 +20,11 @@ terraform {
   }
 
   required_providers {
-    kubernetes = { source = "hashicorp/kubernetes", version = "~> 3.0" }
-    helm       = { source = "hashicorp/helm", version = "~> 3.0" }
     cloudflare = { source = "cloudflare/cloudflare", version = "~> 5.0" }
-    tls        = { source = "hashicorp/tls", version = "~> 4.0" }
+    helm       = { source = "hashicorp/helm", version = "~> 3.0" }
+    kubernetes = { source = "hashicorp/kubernetes", version = "~> 3.0" }
     oci        = { source = "oracle/oci", version = "~> 8.0" }
+    tls        = { source = "hashicorp/tls", version = "~> 4.0" }
   }
 }
 
@@ -32,10 +32,10 @@ data "terraform_remote_state" "infra" {
   backend = "s3"
   config = {
     bucket                      = "ddyyconsulting-terraform-states"
-    key                         = "terraform-oci-free-tier-infra/terraform.tfstate"
-    region                      = "il-jerusalem-1"
-    profile                     = "ddyyconsulting"
     endpoints                   = { s3 = "https://axbasucxrqax.compat.objectstorage.il-jerusalem-1.oraclecloud.com" }
+    key                         = "terraform-oci-free-tier-infra/terraform.tfstate"
+    profile                     = "ddyyconsulting"
+    region                      = "il-jerusalem-1"
     shared_credentials_files    = ["~/.oci/config"]
     skip_credentials_validation = true
     skip_region_validation      = true
@@ -51,33 +51,33 @@ provider "oci" {
 }
 
 provider "kubernetes" {
-  host                   = local.k8s_host
   cluster_ca_certificate = base64decode(local.cluster_ca)
+  host                   = local.k8s_host
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "oci"
     args = [
       "ce", "cluster", "generate-token",
       "--cluster-id", local.cluster_id,
       "--region", "il-jerusalem-1",
       "--profile", "ddyyconsulting",
     ]
+    command = "oci"
   }
 }
 
 provider "helm" {
   kubernetes = {
-    host                   = local.k8s_host
     cluster_ca_certificate = base64decode(local.cluster_ca)
+    host                   = local.k8s_host
     exec = {
       api_version = "client.authentication.k8s.io/v1beta1"
-      command     = "oci"
       args = [
         "ce", "cluster", "generate-token",
         "--cluster-id", local.cluster_id,
         "--region", "il-jerusalem-1",
         "--profile", "ddyyconsulting",
       ]
+      command = "oci"
     }
   }
 }
