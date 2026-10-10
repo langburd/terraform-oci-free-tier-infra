@@ -29,7 +29,21 @@ provider "registry.opentofu.org/hashicorp/helm" {
   version     = "3.2.0"
   constraints = "~> 3.0"
   hashes = [
+    "h1:/TdLShnQEtyQRij46dZJobeA8clDnuncSdc2KRkc0B0=",
+    "h1:8j4dgSY+8Y9tukMTo0WuKPyJx0JKUeZsYx9ltTUmEuo=",
+    "h1:AOxR+hQy92GqWcp4rnD3ZBrDlip7M7fOB4zL4aw8AU4=",
+    "h1:IytRFhZXOMPVB36GainacnNoBtiibAdVMdezG2DPVag=",
+    "h1:XpXkXaOaDyICkDLyrRNBzxqUc8zrKp6Y7sw17FGD+Xg=",
+    "h1:c1NQPYp6/iIg0PG/HFodq0oyDVI/FAYZF32eEOliWaw=",
+    "h1:dBAYwgWCv9/ulFx7uxbkNzPYL9TI1aqUF8E7EBJbIRk=",
+    "h1:h05ap1OKMOtgqspVfdc1GmkX9vJJHquxn5g26Ik7+t4=",
+    "h1:h21YEXSmcV7Xe64kptnt0WQYEh6m99jVR8sec2o9stk=",
+    "h1:ikX+6kgc+kYNDAiNghhOhhY15T1Jt6omoWoHlh8CEsY=",
+    "h1:jvnisz9lHFn+5sjbuZwGCqqCvbddTeqWvrYtK4Wcbxw=",
+    "h1:nK2+CnIIaNh3zl4nRRhpxrA5Z7sAMrB3Jmzjcm9hw/4=",
+    "h1:r8rm1wyokhuaFvRDptDm2G1BsvrV6ukGiPoZRGaVmbc=",
     "h1:thNSoWm4pdgTEO1XBi1n5V2nwsdSA6EVEXP3qPZiFcA=",
+    "h1:zVNhod3npW/4gn5QTcQzmlTSdAP7Ttjs59KW6VVyaoo=",
     "zh:1a214581dee54ec4e9afa4050e54f6c187aed4b51b2d2ac929c58706b65e1159",
     "zh:2f8ba94af93011768ed1fffd4d25b980cd764f2d49c9f13475512ec48464da0b",
     "zh:36373bca4f374e95f654def79e0b12df0c8f2e01c634db80ff2737ded29062e3",
@@ -89,7 +103,21 @@ provider "registry.opentofu.org/hashicorp/tls" {
   version     = "4.3.0"
   constraints = "~> 4.0"
   hashes = [
+    "h1:+15bx0zcnqLz534Cbb8IC+FHMqfG55ELn+PxrQDA4gc=",
+    "h1:CzxZKtqwgNLbLx29KpIG8H3jOQFRkXCerkDRafS6PCg=",
+    "h1:EF8ln/osHphljZ9LNlqUICducYCjUq+PSaC2wBZM6cA=",
+    "h1:GizReb5vbh71HnhHlGphHhVFj3ghwAaC2MKqb2d8Ye8=",
+    "h1:O5oOot0y1MLb/j2gXVAOd20bPzM0daZyqgCk4kHbihg=",
+    "h1:SGBiqFFxGryTOiaNNWlC7CCba1hjSsSwcJeg6rOLJrc=",
+    "h1:UAV4fX41sizZ4U+FavGu3Fkgm4g7k8JD7BqBuhjMZ7o=",
     "h1:ZxKvDInYHzss9rv75M778pInFm08ME6hY31XMyFP4IA=",
+    "h1:fpHTjAZkKqg+bRAiHmNzsMtYOPleAuK0hpdJxTLPtJE=",
+    "h1:hC3YGicct3gfUaMeY/Ci1MbS0ieDr6POkU8sudjkwKE=",
+    "h1:jJrKC+VUBdAAfBlcB06mNmlGskdd+MGoQI34hsMLItY=",
+    "h1:mmFJoeY9KBishP/zH8vvtpDekcqiYucgUGUnErhECAY=",
+    "h1:uMVBRi+9fgKgigHapewZE/BPiu/GfPvXlor/N7glFTk=",
+    "h1:xCRJdZECen3k+Qct+nUrUkUG5wpbeSiGHQGIJpgdkxg=",
+    "h1:xX++0TgL6lEWjSs33i3gI07CL1uIcOvUSweNkhvXK78=",
     "zh:07bb8c6e64124dada7dff57a38a46f2f323b3fd77920404c0c550293d1cf6188",
     "zh:0b3bfda2df39c52f1c5452d05cf3107bedd5d20ab6977c90ede540c695fb6c3e",
     "zh:110a055289f0400a63ac172bedb0e671d059b7a5ba22d4a3f5f246ccac0ad676",

@@ -6,10 +6,10 @@ gitops_repo_url      = "git@github.com:langburd/gitops.git"
 gitops_repo_path     = "apps"
 gitops_repo_branch   = "master"
 
-# IP allowlist for argocd.ddyy.pro (per-FQDN: Cloudflare WAF + Traefik ipAllowList).
+## IP allowlist for argocd.ddyy.pro (per-FQDN: Cloudflare WAF + Traefik ipAllowList).
 # argocd_client_cidrs = ["203.0.113.4/32"]
 
-# Secrets — prefer environment: export TF_VAR_cloudflare_api_token=... etc.
-# cloudflare_api_token         = ""
-# certmanager_cf_token         = ""
+## Secrets — prefer environment: export TF_VAR_cloudflare_api_token=... etc.
 # argocd_admin_password_bcrypt = ""
+# certmanager_cf_token         = ""
+# cloudflare_api_token         = ""

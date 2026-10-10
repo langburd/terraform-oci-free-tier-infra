@@ -1,15 +1,7 @@
-# Cluster CA is not exported by the OKE module, so derive it from the cluster's
-# kube-config at apply time (Task 1 fallback path). The kube-config carries the
-# base64 CA in clusters[0].cluster["certificate-authority-data"].
-data "oci_containerengine_cluster_kube_config" "this" {
-  cluster_id = local.cluster_id
-}
-
 locals {
   # Bastion tunnel endpoint (operator runs the port-forward before apply).
   k8s_host = "https://127.0.0.1:6443"
 
-  cluster_ca = yamldecode(data.oci_containerengine_cluster_kube_config.this.content)["clusters"][0]["cluster"]["certificate-authority-data"]
   cluster_id = data.terraform_remote_state.infra.outputs.oke_cluster_id
 
   # NSG holding the public LB 80/443 ingress allowlist (Cloudflare's edge ranges).
@@ -42,4 +34,8 @@ locals {
   }
 
   cert_secret_name = "argocd-tls"
+
+  # Confirmed in Task 4 — Traefik chart names the Gateway after the release ("traefik")
+  # and its listeners "web" / "websecure". Override here if the kubectl check differs.
+  traefik_gateway_name = "traefik-gateway"
 }

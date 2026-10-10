@@ -239,7 +239,7 @@ argocd login argocd.ddyy.pro --grpc-web
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | 5.23.0 |
+| <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | 5.24.0 |
 | <a name="provider_helm"></a> [helm](#provider\_helm) | 3.2.0 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | 3.2.1 |
 | <a name="provider_oci"></a> [oci](#provider\_oci) | 8.28.0 |
