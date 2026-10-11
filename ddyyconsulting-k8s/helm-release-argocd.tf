@@ -16,4 +16,9 @@ resource "helm_release" "argocd" {
     })
   ]
   version = local.chart_versions.argocd
+
+  # ArgoCD self-manages via the argocd addon (langburd/gitops); TF only bootstraps it.
+  lifecycle {
+    ignore_changes = all
+  }
 }

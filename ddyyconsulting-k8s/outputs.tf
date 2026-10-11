@@ -3,9 +3,9 @@ output "argocd_url" {
   value       = "https://${local.argocd_fqdn}"
 }
 
-output "traefik_lb_ip" {
-  description = "Public IP of the OCI Load Balancer fronting Traefik."
-  value       = local.traefik_lb_ip
+output "ingress_reserved_ip" {
+  description = "Reserved public IP attached to the Traefik NLB."
+  value       = data.terraform_remote_state.infra.outputs.ingress_reserved_ip
 }
 
 output "argocd_admin_hint" {
