@@ -184,3 +184,40 @@ Notes:
 - The local port (`6443`) and SSH key paths are configurable at the top of the function.
 - The `KexAlgorithms=ecdh-sha2-nistp256` option is required — the OCI bastion SSH host only offers that key exchange.
 - `IdentitiesOnly=yes` is required so `ssh` offers only the `-i` key. Without it, keys loaded in `ssh-agent` are offered first and the bastion rejects them with `Permission denied (publickey)` before the correct key is tried.
+
+## Vault secrets
+
+Secrets consumed by in-cluster workloads live in the `ddyy-gitops` OCI Vault and are
+synced into Kubernetes by External Secrets Operator (ESO) using the `langburd/gitops` addons.
+
+| Vault secret | Fed by | Synced to |
+| --- | --- | --- |
+| `cert-manager-cloudflare-api-token` | `TF_VAR_certmanager_cf_token` | `cloudflare-api-token-eso` (cert-manager namespace) |
+| `argocd-admin-password-bcrypt` | `TF_VAR_argocd_admin_password_bcrypt` | `argocd-secret` (merged by ExternalSecret) |
+| `argocd-admin-password-mtime` | `argocd_admin_password_mtime` (default `2026-06-27T00:00:00Z`) | `argocd-secret` (merged by ExternalSecret) |
+
+Generate the bcrypt hash with:
+
+```bash
+htpasswd -nbBC 10 "" '<password>' | tr -d ':\n' | sed 's/$2y/$2a/'
+```
+
+### Rotation
+
+Export the new value and run `tofu apply` in this directory; it creates a new version of
+the Vault secret. ESO picks it up within the ExternalSecret `refreshInterval` (1h), or
+force a sync immediately:
+
+```bash
+kubectl -n <namespace> annotate externalsecret <name> force-sync=$(date +%s) --overwrite
+```
+
+Changing `argocd_admin_password_mtime` resets the ArgoCD admin password; only do so
+deliberately.
+
+### IAM
+
+ESO authenticates with the worker node's instance principal. The dynamic group
+`ddyy-oke-workers` (all instances in the Dev compartment) and the policy
+`ddyy-oke-eso-read-secrets` (`read secret-family` limited to this vault) are defined in
+`oci-identity-eso.tf`.

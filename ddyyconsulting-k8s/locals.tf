@@ -6,7 +6,7 @@ locals {
 
   # NSG holding the public LB 80/443 ingress allowlist (Cloudflare's edge ranges).
   # The OCI CCM manages security rules for LBaaS but NOT for NLBs, so the NSG has to
-  # be attached explicitly through a Service annotation — see the traefik values.
+  # be attached explicitly through a Service annotation (set by the traefik addon in langburd/gitops).
   lb_nsg_id = data.terraform_remote_state.infra.outputs.oke_lb_nsg_id
 
   # Fixed, non-secret configuration for this environment. Secrets stay as
@@ -22,9 +22,7 @@ locals {
   gitops_repo_url    = "git@github.com:langburd/gitops.git"
 
   namespaces = {
-    argocd       = "argocd"
-    cert_manager = "cert-manager"
-    traefik      = "traefik"
+    argocd = "argocd"
   }
 
   chart_versions = {
