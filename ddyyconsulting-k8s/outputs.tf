@@ -10,7 +10,7 @@ output "ingress_reserved_ip" {
 
 output "argocd_admin_hint" {
   description = "How to log in to ArgoCD."
-  value       = "Login at https://${local.argocd_fqdn} as 'admin'; the password is the Vault secret 'argocd-admin-password-bcrypt' (bcrypt hash) in ddyyconsulting, synced by External Secrets."
+  value       = "Login at https://${local.argocd_fqdn} as 'admin' with the password whose bcrypt hash is stored in the OCI Vault secret 'argocd-admin-password-bcrypt' (ddyyconsulting), synced into argocd-secret by External Secrets."
 }
 
 output "gitops_deploy_public_key" {
