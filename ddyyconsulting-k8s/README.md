@@ -111,18 +111,20 @@ Then retry the targeted apply.
 
 ## IP allowlist (per-FQDN)
 
-> The Traefik pieces described here (Middleware, HTTPRoute, NLB annotations, chart values)
-> are now owned by the `traefik` and `argocd` addons in `langburd/gitops`; only the
-> Cloudflare rule, DNS record and `argocd_client_cidrs` annotation remain in this layer.
-
 Access to `argocd.ddyy.pro` is restricted to `var.argocd_client_cidrs`, enforced at two
 independent layers. Both are scoped to that one hostname — every other name in `ddyy.pro`
 is unaffected.
 
+Ownership is split: this layer owns the Cloudflare rule, the DNS record and the CIDR list
+(`argocd_client_cidrs` TF var → cluster Secret annotation `argocd_client_cidrs`). The
+`ipAllowList` Middleware, the HTTPRoutes and the Certificate live in `langburd/gitops`
+`addons/argocd/manifests`, and the Traefik NLB settings in `addons/traefik`; ArgoCD renders
+the allowlist from the annotation.
+
 | Layer | Mechanism | Rejects with |
 | --- | --- | --- |
 | Cloudflare edge | `cloudflare_ruleset` custom rule, expression matches `http.host eq "argocd.ddyy.pro"` ([`cloudflare-ruleset-zone-firewall-custom.tf`](./cloudflare-ruleset-zone-firewall-custom.tf)) | Cloudflare `403` block page |
-| Origin (Traefik) | `Middleware` `ipAllowList` + `ipStrategy.depth = 1`, attached to the ArgoCD `HTTPRoute` via an `ExtensionRef` filter ([`kubernetes-manifest-argocd-ipallow.tf`](./kubernetes-manifest-argocd-ipallow.tf)) | Traefik `403` |
+| Origin (Traefik) | `Middleware` `ipAllowList` + `ipStrategy.depth = 1`, attached to the ArgoCD `HTTPRoute` via an `ExtensionRef` filter (`middleware-ipallow.yaml` in `langburd/gitops` `addons/argocd/manifests/templates/`) | Traefik `403` |
 
 The origin layer exists so that discovering the NLB's public IP is not enough to bypass
 the edge rule. Gateway API has no core IP filter, hence the Traefik-specific
@@ -190,28 +192,29 @@ node count means changing both.
 
 ### Changing the allowlist
 
-Editing `argocd_client_cidrs` alone needs a plain `tofu apply` — the `Middleware` and the
-WAF rule both update in place.
-
-Editing the `HTTPRoute` itself needs `-replace`: `spec.rules` sits in its
-`computed_fields`, so the provider ignores config changes beneath it and produces no
-diff at all.
-
-```bash
-tofu apply -replace=kubernetes_manifest.argocd_httproute
-```
+Editing `argocd_client_cidrs` and running `tofu apply` updates the WAF rule and the cluster
+Secret annotation in place; ArgoCD then re-renders the `Middleware` from the annotation.
+Changes to the Middleware, HTTPRoutes or Certificate themselves are made in
+`langburd/gitops` `addons/argocd/manifests`, not here.
 
 Cloudflare's edge ranges change occasionally. When they do, re-apply both layers — the
-`ddyyconsulting` layer refreshes the `worker_nsg` NodePort rules and this one refreshes
-`trustedIPs`. A stale list shows up as Cloudflare error 522.
+`ddyyconsulting` layer refreshes the `worker_nsg` NodePort rules and this one refreshes the
+`trusted_proxy_cidrs` annotation used for Traefik's `trustedIPs`. A stale list shows up as
+Cloudflare error 522.
 
 ## Verify
 
 ```bash
-kubectl get gatewayclass traefik
-kubectl -n traefik get gateway
-kubectl -n traefik get secret argocd-tls
-curl -sS -o /dev/null -w '%{http_code} %{ssl_verify_result}\n' https://argocd.ddyy.pro/healthz   # 200 0
+# Secrets pipeline: Vault -> ESO
+kubectl get clustersecretstore oci-vault                       # READY True
+kubectl get externalsecret -A                                  # STATUS SecretSynced
+
+# Ingress IP matches the reserved IP from ../ddyyconsulting
+kubectl -n traefik get svc traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
+tofu -chdir=../ddyyconsulting output -raw ingress_reserved_ip
+
+# ArgoCD and all addons healthy
+argocd app list                                                # all Synced / Healthy
 kubectl -n argocd get application app-of-apps
 
 # Proxying is live (expect a Cloudflare edge IP, not the NLB's, plus a cf-ray header).
@@ -219,12 +222,7 @@ dig +short argocd.ddyy.pro
 curl -sSI https://argocd.ddyy.pro/ | grep -i '^cf-ray\|^server'
 
 # IP allowlist: 200 from an allowed CIDR, 403 from anywhere else (e.g. phone hotspot).
-kubectl -n argocd get middleware argocd-ipallow
-kubectl -n argocd get httproute argocd -o jsonpath='{.spec.rules[0].filters}'
 curl -sS -o /dev/null -w '%{http_code}\n' https://argocd.ddyy.pro/
-
-# Which client IP the origin actually saw (should be your real IP, not a Cloudflare one).
-kubectl -n traefik logs deploy/traefik | tail -5
 ```
 
 The `argocd` CLI speaks gRPC, which needs the gRPC-Web fallback through Cloudflare:

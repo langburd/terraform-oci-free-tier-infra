@@ -127,4 +127,4 @@ Tokens can be rolled without downtime:
 - **Everything returns 403 from Traefik, not Cloudflare:** the `ipAllowList` Middleware
   read the wrong X-Forwarded-For position. Inspect the Traefik access log for the client
   IP it saw (`kubectl -n traefik logs deploy/traefik | tail -20`) and adjust
-  `ipStrategy.depth` in `ddyyconsulting-k8s/kubernetes-manifest-argocd-ipallow.tf`.
+  `ipStrategy.depth` in `middleware-ipallow.yaml` (langburd/gitops `addons/argocd/manifests/templates/`).

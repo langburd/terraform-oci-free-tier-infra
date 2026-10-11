@@ -1,5 +1,5 @@
 # Edge half of the per-FQDN IP allowlist (the origin half is the Traefik Middleware
-# in kubernetes-manifest-argocd-ipallow.tf). Blocks non-allowlisted clients at
+# in langburd/gitops addons/argocd). Blocks non-allowlisted clients at
 # Cloudflare, before the request ever reaches the OCI load balancer.
 #
 # The expression is scoped to the ArgoCD hostname, so every other name in the zone —
