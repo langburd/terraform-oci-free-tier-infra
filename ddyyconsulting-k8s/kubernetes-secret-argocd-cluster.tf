@@ -11,7 +11,7 @@ resource "kubernetes_secret_v1" "argocd_cluster_ddyy_oke" {
   metadata {
     annotations = {
       acme_email           = local.acme_email
-      addons_autosync      = "false" # flip to "true" after reviewing each generated app
+      addons_autosync      = "true" # "false" = review `argocd app diff` before syncing
       addons_repo_revision = "HEAD"
       addons_repo_url      = local.gitops_repo_url
       argocd_client_cidrs  = jsonencode(var.argocd_client_cidrs)

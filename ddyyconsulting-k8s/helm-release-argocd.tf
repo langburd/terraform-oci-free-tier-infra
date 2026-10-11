@@ -10,14 +10,14 @@ resource "helm_release" "argocd" {
   timeout     = 1200 # ArgoCD is slow to settle (CRDs + multiple deployments)
   values = [
     templatefile("${path.module}/helm-values/argocd/values.yaml.tpl", {
-      admin_password_hash  = var.argocd_admin_password_bcrypt
-      admin_password_mtime = var.argocd_admin_password_mtime
-      argocd_fqdn          = local.argocd_fqdn
+      argocd_fqdn = local.argocd_fqdn
     })
   ]
   version = local.chart_versions.argocd
 
-  # ArgoCD self-manages via the argocd addon (langburd/gitops); TF only bootstraps it.
+  # ArgoCD is self-managed by langburd/gitops addons/argocd; this release is install-once /
+  # break-glass (`tofu apply -replace=helm_release.argocd`). The admin password is restored
+  # by the ESO ExternalSecret (Merge into argocd-secret), not by these values.
   lifecycle {
     ignore_changes = all
   }

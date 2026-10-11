@@ -1,14 +1,14 @@
 # Creating the Cloudflare API tokens
 
-The `ddyyconsulting-k8s` layer needs **two** scoped Cloudflare API tokens, both limited to
+The `ddyyconsulting-k8s` and `ddyyconsulting` layers need **two** scoped Cloudflare API tokens, both limited to
 the `ddyy.pro` zone. Keeping them separate follows least-privilege: the Terraform provider
 token can only edit DNS records, while the cert-manager token additionally reads zone
-metadata for the DNS-01 challenge and lives inside the cluster as a Kubernetes Secret.
+metadata for the DNS-01 challenge and reaches the cluster via OCI Vault and External Secrets.
 
 | Token | Consumed by | Stored where | Permissions |
 | --- | --- | --- | --- |
 | **TF provider token** | `provider "cloudflare"` — creates the `argocd` A record **and** the WAF custom rule that gates access to it | `TF_VAR_cloudflare_api_token` env var (never in state as plaintext beyond normal TF handling) | `Zone → DNS → Edit` **and** `Zone → Zone WAF → Edit` |
-| **cert-manager token** | cert-manager DNS-01 solver (Let's Encrypt) | `TF_VAR_certmanager_cf_token` → Kubernetes Secret `cloudflare-api-token` in the `cert-manager` namespace | `Zone → DNS → Edit` **and** `Zone → Zone → Read` |
+| **cert-manager token** | cert-manager DNS-01 solver (Let's Encrypt) | `TF_VAR_certmanager_cf_token` (applied in `ddyyconsulting/`) → OCI Vault secret `cert-manager-cloudflare-api-token` → External Secrets → Kubernetes Secret `cloudflare-api-token-eso` in the `cert-manager` namespace | `Zone → DNS → Edit` **and** `Zone → Zone → Read` |
 
 Both are scoped to **`ddyy.pro`** only. Do not grant account-wide or all-zones access.
 
@@ -52,7 +52,7 @@ custom token is clearer for both).
 
 ## Using the tokens
 
-Export them before running `tofu` in `ddyyconsulting-k8s/`:
+Export them before running `tofu`. The TF provider token is used in `ddyyconsulting-k8s/`; the cert-manager token is applied in `ddyyconsulting/`, which writes it to OCI Vault:
 
 ```bash
 export TF_VAR_cloudflare_api_token=<tf-provider-token>       # ddyy-oke-tf-dns
@@ -89,8 +89,9 @@ Tokens can be rolled without downtime:
 2. For the **TF token:** update `TF_VAR_cloudflare_api_token` and re-run `tofu apply` (or
    just the next apply picks it up — the token is not persisted as a managed resource).
 3. For the **cert-manager token:** update `TF_VAR_certmanager_cf_token` and
-   `tofu apply` — the `kubernetes_secret_v1.cloudflare_token` resource updates the in-cluster
-   Secret. cert-manager reloads it automatically.
+   `tofu apply` in `ddyyconsulting/` — this creates a new Vault secret version. ESO syncs it
+   into `cloudflare-api-token-eso` within the 1h `refreshInterval` (or annotate the
+   ExternalSecret with `force-sync=$(date +%s)`). cert-manager reads the Secret on its next challenge.
 4. Delete the old token in the Cloudflare dashboard once the new one is confirmed working.
 
 ## Troubleshooting

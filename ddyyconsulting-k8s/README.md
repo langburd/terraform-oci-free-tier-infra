@@ -1,7 +1,9 @@
 # ddyyconsulting-k8s
 
-OpenTofu layer that installs Traefik (Gateway API), cert-manager, and ArgoCD onto the
-existing OKE cluster from `../ddyyconsulting`, exposing ArgoCD at <https://argocd.ddyy.pro>.
+OpenTofu layer that bootstraps ArgoCD onto the existing OKE cluster from
+`../ddyyconsulting` and hands everything else (Traefik, cert-manager, External Secrets,
+metrics-server, ArgoCD itself) to GitOps via [`langburd/gitops`](https://github.com/langburd/gitops).
+ArgoCD is exposed at <https://argocd.ddyy.pro>.
 
 The Kubernetes/Helm providers authenticate via the OCI exec-token plugin over the OCI
 Bastion tunnel. The cluster CA is read from the cluster's kube-config via the `oci`
@@ -29,30 +31,19 @@ environment variables (never committed):
 | Env var | Secret | Cloudflare scope |
 | --- | --- | --- |
 | `TF_VAR_cloudflare_api_token` | Cloudflare token for the TF provider (A record + WAF rule) | `Zone:DNS:Edit` + `Zone:Zone WAF:Edit` @ `ddyy.pro` |
-| `TF_VAR_certmanager_cf_token` | Cloudflare token for cert-manager DNS-01 | `Zone:DNS:Edit` + `Zone:Zone:Read` @ `ddyy.pro` |
-| `TF_VAR_argocd_admin_password_bcrypt` | Bcrypt hash of the ArgoCD admin password | — |
 | `TF_VAR_argocd_client_cidrs` | JSON list of CIDRs allowed to reach `argocd.ddyy.pro` | — |
 
-See [`docs/cloudflare-tokens.md`](../docs/cloudflare-tokens.md) for how to mint the two
-Cloudflare tokens. Generate the bcrypt hash with:
-
-```bash
-htpasswd -nbBC 10 "" '<password>' | tr -d ':\n' | sed 's/$2y/$2a/'
-```
-
-Export everything before running `tofu`:
+The cert-manager Cloudflare token and the ArgoCD admin password hash are no longer inputs
+here: they live in OCI Vault, managed by [`../ddyyconsulting`](../ddyyconsulting/README.md#vault-secrets)
+and synced into the cluster by External Secrets. See
+[`docs/cloudflare-tokens.md`](../docs/cloudflare-tokens.md) for how to mint the Cloudflare tokens.
 
 ```bash
 export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
 export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
-export TF_VAR_cloudflare_api_token=...        # Zone:DNS:Edit @ ddyy.pro
-export TF_VAR_certmanager_cf_token=...         # Zone:DNS:Edit + Zone:Zone:Read @ ddyy.pro
-export TF_VAR_argocd_admin_password_bcrypt='$2a$...'
+export TF_VAR_cloudflare_api_token=...        # Zone:DNS:Edit + Zone:Zone WAF:Edit @ ddyy.pro
 export TF_VAR_argocd_client_cidrs='["203.0.113.4/32"]'
 ```
-
-`argocd_admin_password_mtime` stays a variable (default `2026-06-27T00:00:00Z`); override
-it only if you deliberately want to reset the admin password.
 
 ## Post-apply, one-time (deploy key)
 
@@ -65,32 +56,47 @@ tofu output -raw gitops_deploy_public_key
 
 ArgoCD's repo connection stays "failed" until this is done.
 
-## First apply (CRD ordering)
+## Bootstrap
 
-`kubernetes_manifest` performs a server-side dry-run at **plan time** — CRDs must exist in
-the cluster before `tofu plan` runs. `depends_on` only controls apply ordering, not
-plan-time CRD availability. On a clean cluster, install charts in three targeted steps
-before running a full apply:
+This layer does the minimum needed for ArgoCD to take over; everything after that is
+driven by `langburd/gitops`.
+
+1. `helm_release.argocd` installs ArgoCD once (`lifecycle { ignore_changes = all }`).
+   From then on ArgoCD is self-managed by the gitops `argocd` addon. For break-glass
+   re-installs use `tofu apply -replace=helm_release.argocd`; the admin password is
+   restored by the ESO ExternalSecret, not by chart values.
+2. A TF-generated deploy key and the `gitops-repo` Secret give ArgoCD read access to
+   `langburd/gitops` (see the deploy-key step above).
+3. The cluster Secret `ddyy-oke` carries the GitOps Bridge labels (`enable_*`) and
+   annotations (FQDN, reserved IP, LB NSG, Vault id, ...) that drive the addon
+   ApplicationSets.
+4. The root Application `app-of-apps` tracks `langburd/gitops` path `bootstrap/`.
+5. DNS: the proxied `argocd.ddyy.pro` record points at the reserved IP from
+   `../ddyyconsulting`.
+
+On a clean cluster a plain `tofu apply` is enough, except that `app-of-apps` is a
+`kubernetes_manifest` (server-side dry-run at plan time needs the `Application` CRD), so
+install ArgoCD first:
 
 ```bash
-# Step 1 — namespaces + cert-manager (installs ClusterIssuer/Certificate CRDs)
-tofu apply \
-  -target=kubernetes_namespace_v1.cert_manager \
-  -target=kubernetes_namespace_v1.argocd \
-  -target=kubernetes_namespace_v1.traefik \
-  -target=helm_release.cert_manager
-
-# Step 2 — Traefik (installs Gateway/HTTPRoute/GatewayClass CRDs)
-tofu apply -target=helm_release.traefik
-
-# Step 3 — ArgoCD (installs Application CRD)
-tofu apply -target=helm_release.argocd
-
-# Step 4 — all kubernetes_manifest resources + remainder (CRDs now present)
+tofu apply -target=kubernetes_namespace_v1.argocd -target=helm_release.argocd
 tofu apply
 ```
 
-Subsequent applies on an already-provisioned cluster need no targeting.
+### Addon autosync
+
+The cluster Secret annotation `addons_autosync` (in
+`kubernetes-secret-argocd-cluster.tf`) controls whether generated addon Applications
+sync automatically. It is `"true"`. Set it to `"false"` and apply to review
+`argocd app diff <app>` before syncing manually.
+
+### Gotchas
+
+- The OCI CCM cannot attach a reserved IP to an existing NLB. If the traefik Service was
+  created before the reserved IP was wired in, delete the Service once
+  (`kubectl -n traefik delete svc traefik`) and let ArgoCD recreate it.
+- New Vault endpoints need a few minutes of DNS propagation; ExternalSecrets may report
+  errors until then and recover on their own.
 
 ### Stuck Helm release
 
@@ -104,6 +110,10 @@ helm uninstall <release> -n <namespace>
 Then retry the targeted apply.
 
 ## IP allowlist (per-FQDN)
+
+> The Traefik pieces described here (Middleware, HTTPRoute, NLB annotations, chart values)
+> are now owned by the `traefik` and `argocd` addons in `langburd/gitops`; only the
+> Cloudflare rule, DNS record and `argocd_client_cidrs` annotation remain in this layer.
 
 Access to `argocd.ddyy.pro` is restricted to `var.argocd_client_cidrs`, enforced at two
 independent layers. Both are scoped to that one hostname — every other name in `ddyy.pro`
@@ -271,8 +281,6 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_argocd_admin_password_bcrypt"></a> [argocd\_admin\_password\_bcrypt](#input\_argocd\_admin\_password\_bcrypt) | Bcrypt hash of the ArgoCD admin password. | `string` | n/a | yes |
-| <a name="input_argocd_admin_password_mtime"></a> [argocd\_admin\_password\_mtime](#input\_argocd\_admin\_password\_mtime) | Fixed RFC3339 timestamp for argocdServerAdminPasswordMtime. Set ONCE (e.g. 2026-06-27T00:00:00Z). Changing it resets the admin password; do not use a dynamic value. | `string` | `"2026-06-27T00:00:00Z"` | no |
 | <a name="input_argocd_client_cidrs"></a> [argocd\_client\_cidrs](#input\_argocd\_client\_cidrs) | CIDRs permitted to reach argocd.ddyy.pro. Enforced per-FQDN at two layers: a Cloudflare WAF rule scoped to the hostname, and a Traefik ipAllowList Middleware on the ArgoCD HTTPRoute. Other hostnames are unaffected. | `list(string)` | n/a | yes |
 | <a name="input_cloudflare_api_token"></a> [cloudflare\_api\_token](#input\_cloudflare\_api\_token) | Cloudflare API token for the TF provider (Zone:DNS:Edit on the zone). | `string` | n/a | yes |
 
