@@ -1,5 +1,5 @@
 module "dev_compartment" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/identity/v1.1.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/identity/v2.0.0"
   # source = "../../terraform-oci-free-tier-modules/oci/identity"
 
   compartment_description   = "Compartment used for a Development purposes"

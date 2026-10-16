@@ -1,5 +1,5 @@
 module "vault" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vault/v1.1.0"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vault/v2.0.0"
   # source = "../../terraform-oci-free-tier-modules/oci/vault"
 
   compartment_id      = module.dev_compartment.compartment_id

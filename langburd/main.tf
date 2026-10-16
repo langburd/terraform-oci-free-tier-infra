@@ -10,7 +10,7 @@ module "oci_profile_reader" {
 }
 
 module "compartment" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/identity/v1.0.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/identity/v2.0.0"
 
   oci_root_compartment      = module.oci_profile_reader.oci_profile_data.tenancy
   compartment_description   = "Compartment for Pi-Hole and WireGuard VPN"

@@ -1,5 +1,5 @@
 module "lb_subnet" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/subnet/v1.1.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/subnet/v2.0.0"
 
   compartment_id       = module.dev_compartment.compartment_id
   route_table_id       = module.k8s_vcn.public_route_table_id

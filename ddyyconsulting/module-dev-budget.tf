@@ -1,5 +1,5 @@
 module "dev_budget" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/budget/v1.1.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/budget/v2.0.0"
   # source = "../../terraform-oci-free-tier-modules/oci/budget"
 
   alert_freeform_tags   = local.default_tags

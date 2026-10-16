@@ -1,5 +1,5 @@
 module "oke_node_pool" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oke_node_pool/v1.0.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oke_node_pool/v2.0.0"
 
   boot_volume_size_in_gbs  = var.boot_volume_size_in_gbs
   cluster_id               = module.oke_cluster.cluster_id

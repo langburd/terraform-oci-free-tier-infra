@@ -1,5 +1,5 @@
 module "k8s_vcn" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vcn/v1.1.2"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vcn/v2.0.0"
 
   compartment_id          = module.dev_compartment.compartment_id
   create_internet_gateway = true
