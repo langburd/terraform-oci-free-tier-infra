@@ -43,7 +43,7 @@
         "terraform"
       ],
       "matchDepTypes": [
-        "provider"
+        "required_provider"
       ],
       "matchUpdateTypes": [
         "minor",
