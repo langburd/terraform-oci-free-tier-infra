@@ -26,6 +26,6 @@ locals {
   }
 
   chart_versions = {
-    argocd = "10.0.0" # confirm: helm search repo argo/argo-cd
+    argocd = "10.10.5" # confirm: helm search repo argo/argo-cd
   }
 }
