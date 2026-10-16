@@ -58,6 +58,8 @@ repos:
       # #   exclude: "^terragrunt.hcl$"
       - id: terraform_fmt
       - id: terraform_docs
+        args:
+          - --args=--lockfile=false
       - id: terraform_tflint
         args:
           - >
