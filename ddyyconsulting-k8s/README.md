@@ -240,7 +240,7 @@ argocd login argocd.ddyy.pro --grpc-web
 | <a name="requirement_cloudflare"></a> [cloudflare](#requirement\_cloudflare) | ~> 5.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 3.0 |
 | <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | ~> 3.0 |
-| <a name="requirement_oci"></a> [oci](#requirement\_oci) | ~> 8.0 |
+| <a name="requirement_oci"></a> [oci](#requirement\_oci) | ~> 9.0 |
 | <a name="requirement_tls"></a> [tls](#requirement\_tls) | ~> 4.0 |
 
 ## Providers
@@ -250,7 +250,7 @@ argocd login argocd.ddyy.pro --grpc-web
 | <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | ~> 5.0 |
 | <a name="provider_helm"></a> [helm](#provider\_helm) | ~> 3.0 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | ~> 3.0 |
-| <a name="provider_oci"></a> [oci](#provider\_oci) | ~> 8.0 |
+| <a name="provider_oci"></a> [oci](#provider\_oci) | ~> 9.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | ~> 4.0 |
 
