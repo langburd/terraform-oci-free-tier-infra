@@ -1,5 +1,5 @@
 module "oke_cluster" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oke_cluster/v1.0.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/oke_cluster/v2.0.0"
 
   cluster_freeform_tags         = local.default_tags
   cluster_name                  = var.cluster_name

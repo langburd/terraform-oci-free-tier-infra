@@ -1,5 +1,5 @@
 module "api_endpoint_nsg" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/network_security_group/v1.0.1"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/network_security_group/v2.0.0"
 
   compartment_id = module.dev_compartment.compartment_id
 
