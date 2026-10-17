@@ -1,16 +1,20 @@
 # Creating the Cloudflare API tokens
 
-The `ddyyconsulting-k8s` and `ddyyconsulting` layers need **two** scoped Cloudflare API tokens, both limited to
-the `ddyy.pro` zone. Keeping them separate follows least-privilege: the Terraform provider
+The `ddyyconsulting-k8s` and `ddyyconsulting` layers need **two** scoped Cloudflare API tokens, plus one
+**R2 API token** for the Vaultwarden off-site backup. Keeping them separate follows least-privilege: the Terraform provider
 token can only edit DNS records, while the cert-manager token additionally reads zone
 metadata for the DNS-01 challenge and reaches the cluster via OCI Vault and External Secrets.
 
 | Token | Consumed by | Stored where | Permissions |
 | --- | --- | --- | --- |
-| **TF provider token** | `provider "cloudflare"` — creates the `argocd` A record **and** the WAF custom rule that gates access to it | `TF_VAR_cloudflare_api_token` env var (never in state as plaintext beyond normal TF handling) | `Zone → DNS → Edit` **and** `Zone → Zone WAF → Edit` |
-| **cert-manager token** | cert-manager DNS-01 solver (Let's Encrypt) | `TF_VAR_certmanager_cf_token` (applied in `ddyyconsulting/`) → OCI Vault secret `cert-manager-cloudflare-api-token` → External Secrets → Kubernetes Secret `cloudflare-api-token-eso` in the `cert-manager` namespace | `Zone → DNS → Edit` **and** `Zone → Zone → Read` |
+| **TF provider token** | `provider "cloudflare"` — creates the `argocd` A record, the WAF custom rule that gates access to it, **and** the `ddyy-vaultwarden-offsite` R2 bucket with its lifecycle and lock rules | `TF_VAR_cloudflare_api_token` env var (never in state as plaintext beyond normal TF handling) | `Zone → DNS → Edit`, `Zone → Zone WAF → Edit` (zone `ddyy.pro`) **and** `Account → Workers R2 Storage → Edit` (the account) |
+| **cert-manager token** | cert-manager DNS-01 solver (Let's Encrypt) | `TF_VAR_certmanager_cf_token` (applied in `ddyyconsulting/`) → OCI Vault secret `cert-manager-cloudflare-api-token` → External Secrets → Kubernetes Secret `cloudflare-api-token-eso` in the `cert-manager` namespace | `Zone → DNS → Edit` **and** `Zone → Zone → Read` on **`ddyy.pro` and `langburd.com`** (Vaultwarden's `password.langburd.com` certificate) |
+| **R2 API token** (Vaultwarden off-site) | `vaultwarden-offsite-backup` CronJob (langburd/gitops) uploading age-encrypted archives | `TF_VAR_vaultwarden_r2_access_key_id` / `TF_VAR_vaultwarden_r2_secret_access_key` (applied in `ddyyconsulting-k8s/`) → OCI Vault secrets `vaultwarden-r2-access-key-id` / `vaultwarden-r2-secret-access-key` → External Secrets → Secret `vaultwarden-r2` | `Object Read & Write`, **Apply to specific buckets only** · `ddyy-vaultwarden-offsite` |
 
-Both are scoped to **`ddyy.pro`** only. Do not grant account-wide or all-zones access.
+Zone tokens are scoped to their zones only. Do not grant all-zones access. The TF token's
+only account-level permission is R2 storage; it does **not** get `API Tokens → Edit`: the
+bucket-scoped R2 token is minted by hand (below) so Terraform never holds a token that can
+create other tokens.
 
 > `Zone WAF → Edit` was added when `argocd.ddyy.pro` became a proxied record. The
 > `cloudflare_ruleset` resource in `ddyyconsulting-k8s/cloudflare-ruleset-zone-firewall-custom.tf` manages the zone's
@@ -49,6 +53,27 @@ custom token is clearer for both).
 9. Click **Continue to summary**, review, then **Create Token**.
 10. **Copy the token value now** — Cloudflare shows it once. Store it in your password
     manager.
+
+## R2 API token for the Vaultwarden off-site bucket
+
+Created after the first `tofu apply` in `ddyyconsulting-k8s/` (which creates the bucket; the
+two R2 Vault secrets are skipped while the variables are unset):
+
+1. Dashboard → **R2 Object Storage → Manage R2 API Tokens → Create API token**.
+2. **Token name:** `ddyy-vaultwarden-offsite`.
+3. **Permissions:** `Object Read & Write`.
+4. **Specify bucket(s):** `Apply to specific buckets only` · `ddyy-vaultwarden-offsite`.
+5. **TTL:** forever, or set one and rotate.
+6. Create, then copy the **Access Key ID** and **Secret Access Key** (shown once) and re-apply:
+
+```bash
+export TF_VAR_vaultwarden_r2_access_key_id=<access-key-id>
+export TF_VAR_vaultwarden_r2_secret_access_key=<secret-access-key>
+tofu apply   # in ddyyconsulting-k8s/: creates the two Vault secrets
+```
+
+The bucket has a 30-day object lock, so even this token cannot delete or overwrite an
+archive younger than 30 days; a lifecycle rule deletes archives after 90 days.
 
 ## Using the tokens
 
@@ -100,6 +125,8 @@ Tokens can be rolled without downtime:
   token is missing `Zone:Zone:Read`. Verify the scope with the `verify` call above.
   Debug with `kubectl -n traefik describe certificate argocd-tls` and
   `kubectl get challenges -A`.
+- **`cloudflare_r2_bucket*` fails with a 403 / `Unauthorized`:** the TF token is missing
+  `Account → Workers R2 Storage → Edit`.
 - **`tofu apply` fails creating the A record with `Authentication error`:** the TF token
   is invalid, expired, or scoped to the wrong zone.
 - **`cloudflare_ruleset.zone_firewall_custom` fails with a 403 / `Unauthorized`:** the TF

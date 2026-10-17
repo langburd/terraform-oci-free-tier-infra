@@ -18,3 +18,27 @@ variable "argocd_client_cidrs" {
     error_message = "argocd_client_cidrs must be a non-empty list of valid CIDRs (e.g. [\"203.0.113.4/32\"])."
   }
 }
+
+variable "offsite_backup_age_recipient" {
+  description = "age public key (age1...) the Vaultwarden off-site backup is encrypted to. The private key stays offline, never in the cluster or OCI (langburd/gitops docs/vaultwarden.md)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^age1[02-9ac-hj-np-z]{58}$", var.offsite_backup_age_recipient))
+    error_message = "offsite_backup_age_recipient must be an age X25519 public key (age1 followed by 58 bech32 characters)."
+  }
+}
+
+variable "vaultwarden_r2_access_key_id" {
+  description = "Access key ID of the R2 API token scoped to the ddyy-vaultwarden-offsite bucket (Object Read & Write). Null until the token is created after the bucket."
+  type        = string
+  default     = null
+  sensitive   = true
+}
+
+variable "vaultwarden_r2_secret_access_key" {
+  description = "Secret access key of the R2 API token scoped to the ddyy-vaultwarden-offsite bucket. Null until the token is created after the bucket."
+  type        = string
+  default     = null
+  sensitive   = true
+}

@@ -15,6 +15,11 @@ locals {
   argocd_fqdn          = "argocd.ddyy.pro"
   cloudflare_zone_name = "ddyy.pro"
 
+  # Vaultwarden (langburd/gitops addons/vaultwarden). langburd.com is a second zone the
+  # cert-manager DNS-01 token must also cover (docs/cloudflare-tokens.md).
+  cert_manager_extra_zones = ["langburd.com"]
+  vaultwarden_fqdn         = "password.langburd.com"
+
   # GitOps repo the ArgoCD root app-of-apps tracks. url MUST be scp-style SSH
   # (git@host:org/repo.git) — ArgoCD matches the SSH key only against that form.
   gitops_repo_branch = "master"
