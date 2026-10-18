@@ -256,13 +256,18 @@ argocd login argocd.ddyy.pro --grpc-web
 
 ## Modules
 
-No modules.
+| Name | Source | Version |
+| ---- | ------ | ------- |
+| <a name="module_vaultwarden_offsite_secrets"></a> [vaultwarden\_offsite\_secrets](#module\_vaultwarden\_offsite\_secrets) | git@github.com:langburd/terraform-oci-free-tier-modules.git | oci/vault_secrets/v1.0.0 |
 
 ## Resources
 
 | Name | Type |
 | ---- | ---- |
 | [cloudflare_dns_record.argocd](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/dns_record) | resource |
+| [cloudflare_r2_bucket.vaultwarden_offsite](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/r2_bucket) | resource |
+| [cloudflare_r2_bucket_lifecycle.vaultwarden_offsite](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/r2_bucket_lifecycle) | resource |
+| [cloudflare_r2_bucket_lock.vaultwarden_offsite](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/r2_bucket_lock) | resource |
 | [cloudflare_ruleset.zone_firewall_custom](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/resources/ruleset) | resource |
 | [helm_release.argocd](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [kubernetes_manifest.app_of_apps](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/manifest) | resource |
@@ -281,6 +286,9 @@ No modules.
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_argocd_client_cidrs"></a> [argocd\_client\_cidrs](#input\_argocd\_client\_cidrs) | CIDRs permitted to reach argocd.ddyy.pro. Enforced per-FQDN at two layers: a Cloudflare WAF rule scoped to the hostname, and a Traefik ipAllowList Middleware on the ArgoCD HTTPRoute. Other hostnames are unaffected. | `list(string)` | n/a | yes |
 | <a name="input_cloudflare_api_token"></a> [cloudflare\_api\_token](#input\_cloudflare\_api\_token) | Cloudflare API token for the TF provider (Zone:DNS:Edit on the zone). | `string` | n/a | yes |
+| <a name="input_offsite_backup_age_recipient"></a> [offsite\_backup\_age\_recipient](#input\_offsite\_backup\_age\_recipient) | age public key (age1...) the Vaultwarden off-site backup is encrypted to. The private key stays offline, never in the cluster or OCI (langburd/gitops docs/vaultwarden.md). | `string` | n/a | yes |
+| <a name="input_vaultwarden_r2_access_key_id"></a> [vaultwarden\_r2\_access\_key\_id](#input\_vaultwarden\_r2\_access\_key\_id) | Access key ID of the R2 API token scoped to the ddyy-vaultwarden-offsite bucket (Object Read & Write). Null until the token is created after the bucket. | `string` | `null` | no |
+| <a name="input_vaultwarden_r2_secret_access_key"></a> [vaultwarden\_r2\_secret\_access\_key](#input\_vaultwarden\_r2\_secret\_access\_key) | Secret access key of the R2 API token scoped to the ddyy-vaultwarden-offsite bucket. Null until the token is created after the bucket. | `string` | `null` | no |
 
 ## Outputs
 
