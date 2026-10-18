@@ -8,8 +8,7 @@ data "oci_identity_availability_domains" "this" {
 # backup stand in for prevent_destroy, which a module input cannot carry: to delete,
 # set is_delete_protected = false and apply first.
 module "mysql_vaultwarden" {
-  # TODO: pin to tag after modules#59 (expected oci/mysql/v2.2.0; branch refs need the //oci/<module> subdir, tags do not)
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//oci/mysql?ref=feat/mysql-byoc"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/mysql/v2.2.0"
 
   admin_password              = random_password.vaultwarden_mysql_admin.result
   admin_username              = "admin"

@@ -9,8 +9,7 @@ locals {
 # plantimestamp and would diff on every plan); the CA outlives the leaf by 9 years.
 # The Certificates API rejects timestamps without fractional seconds and the provider drops `.000`, hence `.001`.
 module "vaultwarden_mysql_certificates" {
-  # TODO: pin to tag after modules#59 (expected oci/certificates/v2.1.0; branch refs need the //oci/<module> subdir, tags do not)
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//oci/certificates?ref=feat/mysql-byoc"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/certificates/v2.1.0"
   # source = "../../terraform-oci-free-tier-modules/oci/certificates"
 
   ca_common_name                         = "vaultwarden-mysql-ca"
