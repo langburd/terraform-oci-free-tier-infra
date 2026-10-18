@@ -5,3 +5,9 @@
 
 ## Secrets — prefer environment: export TF_VAR_cloudflare_api_token=... etc.
 # cloudflare_api_token         = ""
+
+## Vaultwarden off-site backup.
+# offsite_backup_age_recipient = "age1..."          # public key from `age-keygen` (private key stays offline)
+# Set after creating the bucket-scoped R2 API token (docs/cloudflare-tokens.md):
+# export TF_VAR_vaultwarden_r2_access_key_id=...
+# export TF_VAR_vaultwarden_r2_secret_access_key=...

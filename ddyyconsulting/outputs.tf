@@ -163,3 +163,25 @@ output "oci_region" {
   description = "OCI region of the OKE cluster and Vault."
   value       = "il-jerusalem-1"
 }
+
+output "vault_key_id" {
+  description = "OCID of the ddyy-gitops Vault master key (consumed by ddyyconsulting-k8s to write the R2 off-site secrets)."
+  value       = module.vault.key_id
+}
+
+output "oci_objectstorage_namespace" {
+  description = "Object Storage namespace; builds the S3-compatible endpoint https://<ns>.compat.objectstorage.<region>.oraclecloud.com."
+  value       = module.vaultwarden_data_bucket.bucket_namespace
+}
+
+output "vaultwarden_data_bucket" {
+  description = "Name of the Vaultwarden data bucket (DATA_FOLDER)."
+  value       = module.vaultwarden_data_bucket.bucket_name
+}
+
+output "vaultwarden_db_host" {
+  description = "Hostname of the Vaultwarden MySQL HeatWave endpoint (cluster Secret annotation vaultwarden_db_host)."
+  # The mysql module marks its endpoint outputs sensitive; the name itself is not secret.
+  sensitive = true
+  value     = module.mysql_vaultwarden.mysql_hostname
+}

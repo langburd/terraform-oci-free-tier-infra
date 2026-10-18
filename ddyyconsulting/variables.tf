@@ -119,3 +119,14 @@ variable "argocd_admin_password_mtime" {
     error_message = "argocd_admin_password_mtime must be an RFC3339 timestamp (e.g. 2026-06-27T00:00:00Z)."
   }
 }
+
+variable "vaultwarden_admin_token_argon2" {
+  description = "Argon2 PHC hash of the Vaultwarden admin panel token (generate with `vaultwarden hash` or `argon2`). Stored in OCI Vault as vaultwarden-admin-token."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = startswith(var.vaultwarden_admin_token_argon2, "$argon2")
+    error_message = "vaultwarden_admin_token_argon2 must be an Argon2 PHC string (starting with $argon2), not a plain token."
+  }
+}

@@ -9,6 +9,14 @@ terraform {
       source  = "oracle/oci"
       version = "~> 9.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 }
 
