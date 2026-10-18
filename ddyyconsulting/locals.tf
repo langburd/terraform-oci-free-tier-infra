@@ -18,6 +18,11 @@ locals {
   cidr_db         = "10.0.4.0/24"
   cidr_all        = "0.0.0.0/0"
 
+  # DNS labels — the Vaultwarden DB FQDN (and its certificate SAN) is built from these.
+  dns_label_vcn           = "k8svcn"
+  dns_label_db_subnet     = "db"
+  vaultwarden_db_hostname = "vaultwarden-mysql"
+
   # Worker node shape.
   node_shape = "VM.Standard.A1.Flex"
 

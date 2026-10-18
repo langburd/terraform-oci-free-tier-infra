@@ -1,6 +1,5 @@
 locals {
-  # <hostname_label>.<db subnet dns_label>.<VCN dns_label>.oraclevcn.com
-  vaultwarden_db_fqdn = "vaultwarden-mysql.db.k8svcn.oraclevcn.com"
+  vaultwarden_db_fqdn = "${local.vaultwarden_db_hostname}.${local.dns_label_db_subnet}.${local.dns_label_vcn}.oraclevcn.com"
 }
 
 # Private CA plus a server certificate for the Vaultwarden MySQL endpoint (BYOC). The SYSTEM

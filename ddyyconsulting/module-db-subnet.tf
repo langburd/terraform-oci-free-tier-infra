@@ -7,7 +7,7 @@ module "db_subnet" {
   prohibit_internet_ingress = true
   route_table_id            = module.k8s_vcn.private_route_table_id
   subnet_cidr_block         = local.cidr_db
-  subnet_dns_label          = "db"
+  subnet_dns_label          = local.dns_label_db_subnet
   subnet_freeform_tags      = local.default_tags
   vcn_id                    = module.k8s_vcn.vcn_id
 }
