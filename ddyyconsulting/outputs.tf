@@ -185,3 +185,8 @@ output "vaultwarden_db_host" {
   sensitive = true
   value     = module.mysql_vaultwarden.mysql_hostname
 }
+
+output "vaultwarden_mysql_ca_id" {
+  description = "OCID of the private CA that signs the Vaultwarden MySQL certificate; fetch its PEM with the OCI CLI (certificates certificate-authority-bundle)."
+  value       = module.vaultwarden_mysql_certificates.certificate_authority_id
+}
