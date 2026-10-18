@@ -13,14 +13,15 @@ module "vaultwarden_mysql_certificates" {
   source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//oci/certificates?ref=feat/mysql-byoc"
   # source = "../../terraform-oci-free-tier-modules/oci/certificates"
 
-  ca_common_name                                  = "vaultwarden-mysql-ca"
-  ca_name                                         = "vaultwarden-mysql-ca"
-  ca_validity_time_of_validity_not_after          = "2036-10-18T00:00:00.001Z"
-  certificate_common_name                         = local.vaultwarden_db_fqdn
-  certificate_key_algorithm                       = "RSA2048"
-  certificate_name                                = "vaultwarden-mysql"
-  certificate_profile_type                        = "TLS_SERVER"
-  certificate_renewal_rule                        = { renewal_interval = "P365D", advance_renewal_period = "P30D" }
+  ca_common_name                         = "vaultwarden-mysql-ca"
+  ca_name                                = "vaultwarden-mysql-ca"
+  ca_validity_time_of_validity_not_after = "2036-10-18T00:00:00.001Z"
+  certificate_common_name                = local.vaultwarden_db_fqdn
+  certificate_key_algorithm              = "RSA2048"
+  certificate_name                       = "vaultwarden-mysql"
+  certificate_profile_type               = "TLS_SERVER"
+  # The renewal interval must not exceed the leaf validity period.
+  certificate_renewal_rule                        = { renewal_interval = "P330D", advance_renewal_period = "P30D" }
   certificate_subject_alternative_names           = [{ type = "DNS", value = local.vaultwarden_db_fqdn }]
   certificate_validity_time_of_validity_not_after = "2027-10-18T00:00:00.001Z"
   certificates_freeform_tags                      = local.default_tags
