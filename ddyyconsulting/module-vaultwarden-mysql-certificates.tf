@@ -7,6 +7,7 @@ locals {
 # certificate has no SAN, which Vaultwarden's MariaDB connector rejects. Clients pin the CA,
 # so leaf renewals do not break them. Validity dates are fixed (the module defaults use
 # plantimestamp and would diff on every plan); the CA outlives the leaf by 9 years.
+# The Certificates API rejects timestamps without fractional seconds and the provider drops `.000`, hence `.001`.
 module "vaultwarden_mysql_certificates" {
   # TODO: pin to tag after modules#59 (expected oci/certificates/v2.1.0; branch refs need the //oci/<module> subdir, tags do not)
   source = "git@github.com:langburd/terraform-oci-free-tier-modules.git//oci/certificates?ref=feat/mysql-byoc"
@@ -14,14 +15,14 @@ module "vaultwarden_mysql_certificates" {
 
   ca_common_name                                  = "vaultwarden-mysql-ca"
   ca_name                                         = "vaultwarden-mysql-ca"
-  ca_validity_time_of_validity_not_after          = "2036-10-18T00:00:00Z"
+  ca_validity_time_of_validity_not_after          = "2036-10-18T00:00:00.001Z"
   certificate_common_name                         = local.vaultwarden_db_fqdn
   certificate_key_algorithm                       = "RSA2048"
   certificate_name                                = "vaultwarden-mysql"
   certificate_profile_type                        = "TLS_SERVER"
   certificate_renewal_rule                        = { renewal_interval = "P365D", advance_renewal_period = "P30D" }
   certificate_subject_alternative_names           = [{ type = "DNS", value = local.vaultwarden_db_fqdn }]
-  certificate_validity_time_of_validity_not_after = "2027-10-18T00:00:00Z"
+  certificate_validity_time_of_validity_not_after = "2027-10-18T00:00:00.001Z"
   certificates_freeform_tags                      = local.default_tags
   compartment_id                                  = module.dev_compartment.compartment_id
   create_certificate                              = true
