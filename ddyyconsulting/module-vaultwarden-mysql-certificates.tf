@@ -20,6 +20,9 @@ module "vaultwarden_mysql_certificates" {
   certificate_name                       = "vaultwarden-mysql"
   certificate_profile_type               = "TLS_SERVER"
   # The renewal interval must not exceed the leaf validity period.
+  # The leaf validity is a fixed date, so a renewal reissues a cert that still ends on
+  # 2027-10-18 and nothing rotates it after that: bump certificate_validity_time_of_validity_not_after
+  # and apply before ~2027-09.
   certificate_renewal_rule                        = { renewal_interval = "P330D", advance_renewal_period = "P30D" }
   certificate_subject_alternative_names           = [{ type = "DNS", value = local.vaultwarden_db_fqdn }]
   certificate_validity_time_of_validity_not_after = "2027-10-18T00:00:00.001Z"
