@@ -2,8 +2,7 @@
 # bucket only. Identity-domain tenancies give users an email; plus-addressing keeps it
 # unique.
 module "vaultwarden_s3_user" {
-  # TODO: switch to ?ref=oci/s3_access_user/v1.0.0 once langburd/terraform-oci-free-tier-modules#57 merges.
-  source = "git::ssh://git@github.com/langburd/terraform-oci-free-tier-modules.git//oci/s3_access_user?ref=feat/vaultwarden-module-gaps"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/s3_access_user/v1.0.0"
 
   bucket_names   = [module.vaultwarden_data_bucket.bucket_name]
   compartment_id = module.dev_compartment.compartment_id

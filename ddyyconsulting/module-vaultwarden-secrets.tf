@@ -2,8 +2,7 @@
 # (langburd/gitops addons/vaultwarden/manifests/templates/external-secrets.yaml).
 # The R2 off-site credentials live in ../ddyyconsulting-k8s next to the R2 bucket.
 module "vaultwarden_secrets" {
-  # TODO: switch to ?ref=oci/vault_secrets/v1.0.0 once langburd/terraform-oci-free-tier-modules#57 merges.
-  source = "git::ssh://git@github.com/langburd/terraform-oci-free-tier-modules.git//oci/vault_secrets?ref=feat/vaultwarden-module-gaps"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vault_secrets/v1.0.0"
 
   compartment_id = module.dev_compartment.compartment_id
   freeform_tags  = local.default_tags

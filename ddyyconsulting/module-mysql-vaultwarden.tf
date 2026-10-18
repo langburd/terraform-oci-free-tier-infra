@@ -8,8 +8,7 @@ data "oci_identity_availability_domains" "this" {
 # backup stand in for prevent_destroy, which a module input cannot carry: to delete,
 # set is_delete_protected = false and apply first.
 module "mysql_vaultwarden" {
-  # TODO: switch to ?ref=oci/mysql/v2.1.0 once langburd/terraform-oci-free-tier-modules#57 merges.
-  source = "git::ssh://git@github.com/langburd/terraform-oci-free-tier-modules.git//oci/mysql?ref=feat/vaultwarden-module-gaps"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/mysql/v2.1.0"
 
   admin_password             = random_password.vaultwarden_mysql_admin.result
   admin_username             = "admin"

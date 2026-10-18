@@ -2,8 +2,7 @@
 # Versioned; old versions are deleted after 30 days. OCI refuses to delete a bucket that
 # still holds objects or versions, which guards against an accidental destroy.
 module "vaultwarden_data_bucket" {
-  # TODO: switch to ?ref=oci/object_storage/v2.1.0 once langburd/terraform-oci-free-tier-modules#57 merges.
-  source = "git::ssh://git@github.com/langburd/terraform-oci-free-tier-modules.git//oci/object_storage?ref=feat/vaultwarden-module-gaps"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/object_storage/v2.1.0"
 
   bucket_freeform_tags            = local.default_tags
   bucket_name                     = "ddyy-vaultwarden-data"

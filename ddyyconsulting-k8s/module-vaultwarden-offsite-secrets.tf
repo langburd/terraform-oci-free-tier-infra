@@ -2,8 +2,7 @@
 # token is created by hand, scoped to the bucket above, after the bucket exists (see
 # docs/cloudflare-tokens.md), so these secrets are only created once both values are set.
 module "vaultwarden_offsite_secrets" {
-  # TODO: switch to ?ref=oci/vault_secrets/v1.0.0 once langburd/terraform-oci-free-tier-modules#57 merges.
-  source = "git::ssh://git@github.com/langburd/terraform-oci-free-tier-modules.git//oci/vault_secrets?ref=feat/vaultwarden-module-gaps"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/vault_secrets/v1.0.0"
   count  = nonsensitive(var.vaultwarden_r2_access_key_id != null && var.vaultwarden_r2_secret_access_key != null) ? 1 : 0
 
   compartment_id = data.terraform_remote_state.infra.outputs.dev_compartment_id
