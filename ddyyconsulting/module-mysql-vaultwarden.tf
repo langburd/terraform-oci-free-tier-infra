@@ -8,16 +8,18 @@ data "oci_identity_availability_domains" "this" {
 # backup stand in for prevent_destroy, which a module input cannot carry: to delete,
 # set is_delete_protected = false and apply first.
 module "mysql_vaultwarden" {
-  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/mysql/v2.1.0"
+  source = "git@github.com:langburd/terraform-oci-free-tier-modules.git?ref=oci/mysql/v2.2.0"
 
-  admin_password             = random_password.vaultwarden_mysql_admin.result
-  admin_username             = "admin"
-  automatic_backup_retention = "RETAIN"
-  availability_domain        = data.oci_identity_availability_domains.this.availability_domains[0].name
-  compartment_id             = module.dev_compartment.compartment_id
-  final_backup               = "REQUIRE_FINAL_BACKUP"
-  hostname_label             = "vaultwarden-mysql"
-  is_delete_protected        = true
+  admin_password              = random_password.vaultwarden_mysql_admin.result
+  admin_username              = "admin"
+  automatic_backup_retention  = "RETAIN"
+  availability_domain         = data.oci_identity_availability_domains.this.availability_domains[0].name
+  certificate_generation_type = "BYOC"
+  certificate_id              = module.vaultwarden_mysql_certificates.certificate_id
+  compartment_id              = module.dev_compartment.compartment_id
+  final_backup                = "REQUIRE_FINAL_BACKUP"
+  hostname_label              = "vaultwarden-mysql"
+  is_delete_protected         = true
   # Weekly window; OCI also upgrades the MySQL version in it. Sunday 02:00 UTC.
   maintenance_window_start_time = "sun 02:00"
   mysql_display_name            = "vaultwarden-mysql"
