@@ -221,3 +221,19 @@ ESO authenticates with the worker node's instance principal. The dynamic group
 `ddyy-oke-workers` (all instances in the Dev compartment) and the policy
 `ddyy-oke-eso-read-secrets` (`read secret-family` limited to this vault) are defined in
 `oci-identity-eso.tf`.
+
+## Vaultwarden MySQL TLS
+
+The MySQL DB system serves a certificate from a private CA (BYOC) instead of the
+self-signed `SYSTEM` one, which has no SAN and is rejected by Vaultwarden's MariaDB
+connector. The CA (`vaultwarden-mysql-ca`), the leaf (SAN = the DB FQDN) and the HSM key
+in the `ddyy-certificates` vault are defined in `module-vaultwarden-mysql-certificates.tf`
+and `module-vault-certificates.tf`. Fetch the public CA PEM for clients with:
+
+```bash
+oci certificates certificate-authority-bundle get \
+  --certificate-authority-id "$(tofu output -raw vaultwarden_mysql_ca_id)"
+```
+
+The leaf validity is a fixed date (see the comment in the module file): bump it and apply
+before it expires.

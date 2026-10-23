@@ -18,7 +18,7 @@ module "mysql_vaultwarden" {
   certificate_id              = module.vaultwarden_mysql_certificates.certificate_id
   compartment_id              = module.dev_compartment.compartment_id
   final_backup                = "REQUIRE_FINAL_BACKUP"
-  hostname_label              = "vaultwarden-mysql"
+  hostname_label              = local.vaultwarden_db_hostname
   is_delete_protected         = true
   # Weekly window; OCI also upgrades the MySQL version in it. Sunday 02:00 UTC.
   maintenance_window_start_time = "sun 02:00"

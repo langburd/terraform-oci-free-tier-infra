@@ -7,6 +7,6 @@ module "k8s_vcn" {
   create_service_gateway  = true
   vcn_cidr_blocks         = [local.cidr_vcn]
   vcn_display_name        = "k8s-vcn"
-  vcn_dns_label           = "k8svcn"
+  vcn_dns_label           = local.dns_label_vcn
   vcn_freeform_tags       = local.default_tags
 }
