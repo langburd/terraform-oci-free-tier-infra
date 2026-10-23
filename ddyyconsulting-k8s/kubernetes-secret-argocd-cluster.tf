@@ -40,8 +40,7 @@ resource "kubernetes_secret_v1" "argocd_cluster_ddyy_oke" {
       enable_external_secrets          = "true"
       enable_metrics_server            = "true"
       enable_traefik                   = "true"
-      # enable_vaultwarden goes last, after the Vaultwarden PRs are merged and the
-      # off-site R2 key is in Vault (langburd/gitops docs/superpowers plan, Task 14).
+      enable_vaultwarden               = "true"
     }
     name      = "ddyy-oke"
     namespace = local.namespaces.argocd
